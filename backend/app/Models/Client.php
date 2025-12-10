@@ -65,8 +65,8 @@ class Client extends Model
         return $this->belongsToMany(
             Intervenant::class,
             'favorise',
-            'clientId',
-            'intervenantId'
+            'idClient',
+            'idIntervenant'
         )->withTimestamps();
     }
 
