@@ -1,0 +1,23 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class AdminSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        DB::table('admin')->insert([
+            [
+                'id' => 1, // References utilisateur with id=1
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+    }
+}
