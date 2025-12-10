@@ -252,7 +252,8 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     console.error('Erreur de connexion:', error)
-    alert('Erreur de connexion. Vérifiez vos identifiants.')
+    const errorMessage = error.message || error.response?.data?.message || 'Erreur de connexion. Vérifiez vos identifiants.'
+    alert(errorMessage)
   }
 }
 

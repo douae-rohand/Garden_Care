@@ -16,21 +16,22 @@ class Intervenant extends Model
 
     public $incrementing = false;
 
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
+    const CREATED_AT = 'created_at';
+    const UPDATED_AT = 'updated_at';
 
     protected $fillable = [
+        'id',
         'address',
         'ville',
         'bio',
-        'isActive',
-        'adminId',
+        'is_active',
+        'admin_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'isActive' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -47,7 +48,7 @@ class Intervenant extends Model
      */
     public function admin()
     {
-        return $this->belongsTo(Admin::class, 'adminId', 'id');
+        return $this->belongsTo(Admin::class, 'admin_id', 'id');
     }
 
     /**
@@ -111,7 +112,7 @@ class Intervenant extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('isActive', true);
+        return $query->where('is_active', true);
     }
 
     /**
@@ -119,6 +120,6 @@ class Intervenant extends Model
      */
     public function scopeInactive(Builder $query): Builder
     {
-        return $query->where('isActive', false);
+        return $query->where('is_active', false);
     }
 }

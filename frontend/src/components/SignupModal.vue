@@ -461,22 +461,26 @@ const handleSubmit = async () => {
   }
 
   try {
+    // Nettoyer les données : convertir les chaînes vides en null
+    const cleanValue = (value) => (value === '' || value === null || value === undefined) ? null : value
+
     const registrationData = {
-      nom: formData.value.nom,
-      prenom: formData.value.prenom,
-      email: formData.value.email,
-      telephone: formData.value.telephone,
+      nom: cleanValue(formData.value.nom),
+      prenom: cleanValue(formData.value.prenom),
+      email: cleanValue(formData.value.email),
+      telephone: cleanValue(formData.value.telephone),
       password: formData.value.password,
+      confirmPassword: formData.value.confirmPassword,
       type: userType.value,
     }
 
     if (userType.value === 'intervenant') {
-      registrationData.adresse = formData.value.adresse
-      registrationData.ville = formData.value.ville
-      registrationData.codePostal = formData.value.codePostal
-      registrationData.service = formData.value.service
-      registrationData.experience = formData.value.experience
-      registrationData.description = formData.value.description
+      registrationData.adresse = cleanValue(formData.value.adresse)
+      registrationData.ville = cleanValue(formData.value.ville)
+      registrationData.codePostal = cleanValue(formData.value.codePostal)
+      registrationData.service = cleanValue(formData.value.service)
+      registrationData.experience = cleanValue(formData.value.experience)
+      registrationData.description = cleanValue(formData.value.description)
     }
 
     const response = await authService.register(registrationData)
@@ -489,7 +493,37 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     console.error('Erreur d\'inscription:', error)
-    alert('Erreur lors de l\'inscription. Veuillez réessayer.')
+    let errorMessage = 'Erreur lors de l\'inscription. Veuillez réessayer.'
+    
+    if (error.errors && Object.keys(error.errors).length > 0) {
+      // Afficher toutes les erreurs de validation
+      const errorMessages = []
+      for (const [field, messages] of Object.entries(error.errors)) {
+        if (Array.isArray(messages) && messages.length > 0) {
+          errorMessages.push(`${field}: ${messages[0]}`)
+        }
+      }
+      errorMessage = errorMessages.length > 0 
+        ? `Erreurs de validation:\n${errorMessages.join('\n')}`
+        : errorMessage
+    } else if (error.message) {
+      errorMessage = error.message
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+      if (error.response.data.errors) {
+        const errorMessages = []
+        for (const [field, messages] of Object.entries(error.response.data.errors)) {
+          if (Array.isArray(messages) && messages.length > 0) {
+            errorMessages.push(`${field}: ${messages[0]}`)
+          }
+        }
+        if (errorMessages.length > 0) {
+          errorMessage += `\n\n${errorMessages.join('\n')}`
+        }
+      }
+    }
+    
+    alert(errorMessage)
   }
 }
 
