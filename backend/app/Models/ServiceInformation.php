@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\Pivot;
+
+class ServiceInformation extends Pivot
+{
+    use HasFactory;
+
+    protected $table = 'serviceinformation';
+
+    const CREATED_AT = 'createdAt';
+    const UPDATED_AT = 'updatedAt';
+
+    protected $fillable = [
+        'serviceId',
+        'informationId',
+    ];
+
+    /**
+     * Get the service that owns this record.
+     */
+    public function service()
+    {
+        return $this->belongsTo(Service::class, 'serviceId', 'id');
+    }
+
+    /**
+     * Get the information associated with this record.
+     */
+    public function information()
+    {
+        return $this->belongsTo(Information::class, 'informationId', 'id');
+    }
+}

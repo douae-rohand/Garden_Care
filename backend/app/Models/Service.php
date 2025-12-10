@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Service extends Model
+{
+    use HasFactory;
+
+    protected $table = 'service';
+
+    const CREATED_AT = 'createdAt';
+    const UPDATED_AT = 'updatedAt';
+
+    protected $fillable = [
+        'nomService',
+        'description',
+    ];
+
+    /**
+     * Get the taches for this service.
+     */
+    public function taches()
+    {
+        return $this->hasMany(Tache::class, 'idService', 'id');
+    }
+
+    /**
+     * Get the informations required for this service.
+     */
+    public function informations()
+    {
+        return $this->belongsToMany(
+            Information::class,
+            'serviceinformation',
+            'serviceId',
+            'informationId'
+        )->withTimestamps();
+    }
+
+    /**
+     * Get the justificatifs required for this service.
+     */
+    public function justificatifs()
+    {
+        return $this->belongsToMany(
+            Justificatif::class,
+            'servicejustificatif',
+            'serviceId',
+            'justificatifId'
+        )->withTimestamps();
+    }
+}
