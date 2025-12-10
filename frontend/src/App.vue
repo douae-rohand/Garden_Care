@@ -1,7 +1,7 @@
-<script setup>
-import TestApi from './components/TestApi.vue'
-</script>
-
 <template>
-  <TestApi />
+  <router-view />
 </template>
+
+<script setup>
+// Main App component - just router outlet
+</script>
