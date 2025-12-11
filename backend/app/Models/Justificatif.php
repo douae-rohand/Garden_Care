@@ -10,26 +10,22 @@ class Justificatif extends Model
     use HasFactory;
 
     protected $table = 'justificatif';
+    protected $primaryKey = 'idJustificatif';
+    public $timestamps = false;
 
     const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
 
     protected $fillable = [
-        'nom',
-        'description',
+        'cheminFichier',
         'type',
+        'idMateriel',
     ];
 
     /**
-     * Get the services that require this justificatif.
+     * Get the materiel that owns this justificatif.
      */
-    public function services()
+    public function materiel()
     {
-        return $this->belongsToMany(
-            Service::class,
-            'servicejustificatif',
-            'justificatifId',
-            'serviceId'
-        )->withTimestamps();
+        return $this->belongsTo(Materiel::class, 'idMateriel', 'idMateriel');
     }
 }

@@ -7,12 +7,15 @@ use App\Http\Controllers\Api\Service\ServiceController;
 use App\Http\Controllers\Api\Intervention\TacheController;
 use App\Http\Controllers\Api\Client\ClientController;
 use App\Http\Controllers\Api\Intervenant\IntervenantController;
+use App\Http\Controllers\Api\Admin\AdminController;
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 */
+
+// Les requêtes OPTIONS sont gérées par le CorsMiddleware
 
 // Routes publiques (sans authentification)
 Route::post('auth/register', [AuthController::class, 'register']);
@@ -68,4 +71,32 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('intervenants/{id}/interventions', [IntervenantController::class, 'interventions']);
     Route::get('intervenants/{id}/disponibilites', [IntervenantController::class, 'disponibilites']);
     Route::get('intervenants/{id}/taches', [IntervenantController::class, 'taches']);
+
+    // ======================
+    // Routes Admin
+    // ======================
+    Route::prefix('admin')->group(function () {
+        // Dashboard Stats
+        Route::get('stats', [AdminController::class, 'stats']);
+        
+        // Clients Management
+        Route::get('clients', [AdminController::class, 'getClients']);
+        Route::get('clients/{id}', [AdminController::class, 'getClientDetails']);
+        Route::post('clients/{id}/toggle-status', [AdminController::class, 'toggleClientStatus']);
+        
+        // Intervenants Management
+        Route::get('intervenants', [AdminController::class, 'getIntervenants']);
+        Route::post('intervenants/{id}/toggle-status', [AdminController::class, 'toggleIntervenantStatus']);
+        
+        // Demandes (Pending Applications)
+        Route::get('demandes', [AdminController::class, 'getDemandes']);
+        Route::post('demandes/{id}/approve', [AdminController::class, 'approveDemande']);
+        Route::post('demandes/{id}/reject', [AdminController::class, 'rejectDemande']);
+        
+        // Services
+        Route::get('services', [AdminController::class, 'getServices']);
+        
+        // Historique
+        Route::get('historique', [AdminController::class, 'getHistorique']);
+    });
 });

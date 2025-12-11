@@ -11,28 +11,17 @@ class Intervenant extends Model
     use HasFactory;
 
     protected $table = 'intervenant';
-
     protected $primaryKey = 'id';
-
     public $incrementing = false;
 
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
-
     protected $fillable = [
+        'id',
         'address',
         'ville',
         'bio',
-        'isActive',
-        'adminId',
+        'is_active',
+        'admin_id',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'isActive' => 'boolean',
-        ];
-    }
 
     /**
      * Get the utilisateur record associated with the intervenant.
@@ -43,27 +32,24 @@ class Intervenant extends Model
     }
 
     /**
-     * Get the admin that manages this intervenant.
-     */
-    public function admin()
-    {
-        return $this->belongsTo(Admin::class, 'adminId', 'id');
-    }
-
-    /**
      * Get the interventions for this intervenant.
      */
     public function interventions()
     {
-        return $this->hasMany(Intervention::class, 'intervenantId', 'id');
+        return $this->hasMany(Intervention::class, 'intervenant_id', 'id');
     }
 
     /**
-     * Get the disponibilites for this intervenant.
+     * Get the services that this intervenant provides.
      */
-    public function disponibilites()
+    public function services()
     {
-        return $this->hasMany(Disponibilite::class, 'intervenantId', 'id');
+        return $this->belongsToMany(
+            Service::class,
+            'intervenant_service',
+            'intervenant_id',
+            'service_id'
+        )->withTimestamps();
     }
 
     /**
@@ -73,11 +59,11 @@ class Intervenant extends Model
     {
         return $this->belongsToMany(
             Tache::class,
-            'intervenanttache',
-            'intervenantId',
-            'tacheId'
-        )->withPivot('tarif', 'experience')
-            ->withTimestamps();
+            'intervenant_tache',
+            'intervenant_id',
+            'tache_id'
+        )->withPivot('prix_tache')
+         ->withTimestamps();
     }
 
     /**
@@ -87,9 +73,9 @@ class Intervenant extends Model
     {
         return $this->belongsToMany(
             Materiel::class,
-            'intervenantmateriel',
-            'intervenantId',
-            'materielId'
+            'intervenant_materiel',
+            'intervenant_id',
+            'materiel_id'
         )->withTimestamps();
     }
 
@@ -101,9 +87,17 @@ class Intervenant extends Model
         return $this->belongsToMany(
             Client::class,
             'favorise',
-            'intervenantId',
-            'clientId'
+            'intervenant_id',
+            'client_id'
         )->withTimestamps();
+    }
+
+    /**
+     * Get the admin that manages this intervenant.
+     */
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class, 'admin_id', 'id');
     }
 
     /**
@@ -111,7 +105,7 @@ class Intervenant extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('isActive', true);
+        return $query->where('is_active', true);
     }
 
     /**
@@ -119,6 +113,6 @@ class Intervenant extends Model
      */
     public function scopeInactive(Builder $query): Builder
     {
-        return $query->where('isActive', false);
+        return $query->where('is_active', false);
     }
 }

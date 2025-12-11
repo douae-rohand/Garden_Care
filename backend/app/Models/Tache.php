@@ -10,15 +10,17 @@ class Tache extends Model
     use HasFactory;
 
     protected $table = 'tache';
+    protected $primaryKey = 'id';
 
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
+    const CREATED_AT = 'created_at';
+    const UPDATED_AT = 'updated_at';
 
     protected $fillable = [
-        'idService',
-        'nomTache',
+        'service_id',
+        'nom_tache',
         'description',
         'status',
+        'image_url',
     ];
 
     /**
@@ -26,7 +28,7 @@ class Tache extends Model
      */
     public function service()
     {
-        return $this->belongsTo(Service::class, 'idService', 'id');
+        return $this->belongsTo(Service::class, 'service_id', 'id');
     }
 
     /**
@@ -34,7 +36,7 @@ class Tache extends Model
      */
     public function interventions()
     {
-        return $this->hasMany(Intervention::class, 'tacheId', 'id');
+        return $this->hasMany(Intervention::class, 'tache_id', 'id');
     }
 
     /**
@@ -44,10 +46,10 @@ class Tache extends Model
     {
         return $this->belongsToMany(
             Materiel::class,
-            'tachemateriel',
-            'tacheId',
-            'materielId'
-        )->withPivot('quantite')
+            'tache_materiel',
+            'tache_id',
+            'materiel_id'
+        )->withPivot('prix_materiel')
             ->withTimestamps();
     }
 
@@ -58,10 +60,10 @@ class Tache extends Model
     {
         return $this->belongsToMany(
             Intervenant::class,
-            'intervenanttache',
-            'tacheId',
-            'intervenantId'
-        )->withPivot('tarif', 'experience')
+            'intervenant_tache',
+            'tache_id',
+            'intervenant_id'
+        )->withPivot('prix_tache')
             ->withTimestamps();
     }
 }
