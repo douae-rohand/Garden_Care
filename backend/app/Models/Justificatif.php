@@ -28,12 +28,4 @@ class Justificatif extends Model
     {
         return $this->belongsTo(Materiel::class, 'idMateriel', 'idMateriel');
     }
-
-    /**
-     * Get the intervenant services using this justificatif.
-     */
-    public function intervenantServices()
-    {
-        return $this->hasMany(IntervenantService::class, 'idJustificatif', 'idJustificatif');
-    }
 }

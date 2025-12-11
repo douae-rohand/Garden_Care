@@ -319,9 +319,18 @@ const loadHistorique = async () => {
 }
 
 // Actions
-const viewClient = (client) => {
-  selectedClient.value = client
-  showClientDetails.value = true
+const viewClient = async (client) => {
+  try {
+    // Charger les détails complets du client avec feedbacks
+    const response = await adminService.getClientDetails(client.id)
+    selectedClient.value = response.data
+    showClientDetails.value = true
+  } catch (error) {
+    console.error('Erreur chargement détails client:', error)
+    // En cas d'erreur, utiliser les données de base
+    selectedClient.value = client
+    showClientDetails.value = true
+  }
 }
 
 const suspendClient = async (clientId) => {

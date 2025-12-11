@@ -28,6 +28,13 @@ const adminService = {
     },
 
     /**
+     * Récupérer les détails complets d'un client (avec feedbacks)
+     */
+    getClientDetails(id) {
+        return api.get(`admin/clients/${id}`);
+    },
+
+    /**
      * Mettre à jour un client
      */
     updateClient(id, data) {
