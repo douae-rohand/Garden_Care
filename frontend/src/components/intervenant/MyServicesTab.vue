@@ -158,20 +158,20 @@ const error = ref(null)
 
 const materialsByService = {
   menage: [
-    'Aspirateur',
+    'Aspirateur industriel',
     'Balai et serpillière',
     'Produits de nettoyage',
-    'Chiffons et éponges',
-    'Seau',
-    'Nettoyeur vapeur'
+    'Nettoyeur vapeur',
+    'Raclette vitres',
+    'Fer à repasser'
   ],
   jardinage: [
-    'Tondeuse',
-    'Taille-haie',
-    'Râteau',
-    'Pelle et bêche',
-    'Arrosoir',
-    'Sécateur'
+    'Tondeuse à gazon',
+    'Taille-haie électrique',
+    'Débroussailleuse',
+    'Râteau et fourche',
+    'Sécateur professionnel',
+    'Arrosoir et tuyau'
   ]
 }
 
@@ -245,18 +245,24 @@ const startEdit = (service) => {
 
 const saveEdit = async (id) => {
   try {
-    await intervenantTacheService.updateMyTache(id, {
+    const response = await intervenantTacheService.updateMyTache(id, {
       description: editData.value.description,
       hourlyRate: editData.value.hourlyRate,
       materials: editData.value.materials,
     })
     
-    // Update local state
+    // Update local state with response data if available, otherwise use local data
     const service = services.value.find(s => s.id === id)
     if (service) {
       service.description = editData.value.description
       service.hourlyRate = editData.value.hourlyRate
-      service.materials = [...editData.value.materials]
+      
+      // Use the updated materials from backend response if available
+      if (response.data && response.data.updatedMaterials) {
+        service.materials = response.data.updatedMaterials
+      } else {
+        service.materials = [...editData.value.materials]
+      }
     }
     editingService.value = null
   } catch (err) {
