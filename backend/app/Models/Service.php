@@ -15,7 +15,7 @@ class Service extends Model
     const UPDATED_AT = 'updatedAt';
 
     protected $fillable = [
-        'nomService',
+        'nom_service',
         'description',
     ];
 

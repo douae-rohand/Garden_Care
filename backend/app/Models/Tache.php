@@ -15,8 +15,8 @@ class Tache extends Model
     const UPDATED_AT = 'updatedAt';
 
     protected $fillable = [
-        'idService',
-        'nomTache',
+        'service_id',
+        'nom_tache',
         'description',
         'status',
     ];
