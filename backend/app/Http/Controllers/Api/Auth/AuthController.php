@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Utilisateur;
+use App\Models\Client;
+use App\Models\Intervenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -15,31 +18,97 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        $validated = $request->validate([
-            'nom' => 'required|string|max:100',
-            'prenom' => 'nullable|string|max:100',
-            'email' => 'required|string|email|max:150|unique:utilisateur',
-            'password' => 'required|string|min:8|confirmed',
-            'telephone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-        ]);
+        try {
+            // Nettoyer les données : convertir les chaînes vides en null
+            $data = $request->all();
+            foreach ($data as $key => $value) {
+                if ($value === '' || $value === null) {
+                    $data[$key] = null;
+                }
+            }
+            $request->merge($data);
 
-        $user = Utilisateur::create([
-            'nom' => $validated['nom'],
-            'prenom' => $validated['prenom'] ?? null,
-            'email' => $validated['email'],
-            'password' => $validated['password'], // Le mutateur Hash::make est dans le modèle
-            'telephone' => $validated['telephone'] ?? null,
-            'address' => $validated['address'] ?? null,
-        ]);
+            $validated = $request->validate([
+                'nom' => 'required|string|max:100',
+                'prenom' => 'required|string|max:100', // Requis dans le formulaire
+                'email' => 'required|string|email|max:150|unique:utilisateur,email',
+                'password' => 'required|string|min:8',
+                'confirmPassword' => 'nullable|same:password',
+                'telephone' => 'nullable|string|max:20',
+                'address' => 'nullable|string',
+                'adresse' => 'nullable|string', // Alias pour address
+                'type' => 'nullable|string|in:client,intervenant',
+                // Champs spécifiques pour intervenant
+                'ville' => 'nullable|string|max:100',
+                'bio' => 'nullable|string',
+                'description' => 'nullable|string', // Alias pour bio
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        DB::beginTransaction();
+        try {
+            // Utiliser adresse si fourni, sinon address
+            $address = $validated['adresse'] ?? $validated['address'] ?? null;
 
-        return response()->json([
-            'message' => 'Utilisateur créé avec succès',
-            'user' => $user,
-            'token' => $token,
-        ], 201);
+            // Créer l'utilisateur
+            $user = Utilisateur::create([
+                'nom' => $validated['nom'],
+                'prenom' => $validated['prenom'] ?? null,
+                'email' => $validated['email'],
+                'password' => $validated['password'], // Le cast 'hashed' gère automatiquement le hashage
+                'telephone' => $validated['telephone'] ?? null,
+                'address' => $address,
+            ]);
+
+            $userType = $validated['type'] ?? 'client';
+
+            // Créer le client ou l'intervenant selon le type
+            if ($userType === 'client') {
+                Client::create([
+                    'id' => $user->id,
+                    'address' => $address,
+                    'ville' => $validated['ville'] ?? null,
+                    'is_active' => true,
+                    'admin_id' => 1, // Par défaut, assigner au premier admin
+                ]);
+            } elseif ($userType === 'intervenant') {
+                Intervenant::create([
+                    'id' => $user->id,
+                    'address' => $address,
+                    'ville' => $validated['ville'] ?? null,
+                    'bio' => $validated['bio'] ?? $validated['description'] ?? null,
+                    'is_active' => true,
+                    'admin_id' => 1, // Par défaut, assigner au premier admin
+                ]);
+            }
+
+            DB::commit();
+
+            // Charger les relations
+            $user->load(['client', 'intervenant', 'admin']);
+
+            $token = $user->createToken('auth-token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Utilisateur créé avec succès',
+                'user' => $user,
+                'token' => $token,
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de l\'inscription: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'message' => 'Erreur lors de la création de l\'utilisateur',
+                'error' => config('app.debug') ? $e->getMessage() : 'Une erreur est survenue. Veuillez réessayer.',
+            ], 500);
+        }
     }
 
     /**
@@ -47,23 +116,36 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         $user = Utilisateur::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Les identifiants sont incorrects.'],
-            ]);
+            return response()->json([
+                'message' => 'Les identifiants sont incorrects.',
+                'errors' => [
+                    'email' => ['Les identifiants sont incorrects.'],
+                ],
+            ], 401);
         }
 
         // Révoquer les anciens tokens
         $user->tokens()->delete();
 
         $token = $user->createToken('auth-token')->plainTextToken;
+
+        // Charger les relations
+        $user->load(['client', 'intervenant', 'admin']);
 
         return response()->json([
             'message' => 'Connexion réussie',

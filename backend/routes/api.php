@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\Intervenant\IntervenantController;
 |--------------------------------------------------------------------------
 */
 
+// Les requêtes OPTIONS sont gérées par le CorsMiddleware
+
 // Routes publiques (sans authentification)
 Route::post('auth/register', [AuthController::class, 'register']);
 Route::post('auth/login', [AuthController::class, 'login']);

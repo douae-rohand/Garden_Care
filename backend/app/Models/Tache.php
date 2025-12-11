@@ -15,8 +15,8 @@ class Tache extends Model
     const UPDATED_AT = 'updatedAt';
 
     protected $fillable = [
-        'idService',
-        'nomTache',
+        'service_id',
+        'nom_tache',
         'description',
         'status',
     ];
@@ -45,9 +45,9 @@ class Tache extends Model
         return $this->belongsToMany(
             Materiel::class,
             'tachemateriel',
-            'tacheId',
-            'materielId'
-        )->withPivot('quantite')
+            'idTache',
+            'idMateriel'
+        )->withPivot('prixMateriel')
             ->withTimestamps();
     }
 
@@ -59,9 +59,9 @@ class Tache extends Model
         return $this->belongsToMany(
             Intervenant::class,
             'intervenanttache',
-            'tacheId',
-            'intervenantId'
-        )->withPivot('tarif', 'experience')
+            'idTache',
+            'idIntervenant'
+        )->withPivot('prixTache', 'status')
             ->withTimestamps();
     }
 }
