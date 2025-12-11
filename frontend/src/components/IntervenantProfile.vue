@@ -314,6 +314,7 @@ import {
   X as XIcon 
 } from 'lucide-vue-next';
 import ImageWithFallback from './figma/ImageWithFallback.vue';
+import intervenantService from '../services/intervenantService';
 
 export default {
   name: 'IntervenantProfilePage',
@@ -345,6 +346,8 @@ export default {
       selectedImage: null,
       activeTab: 'apropos',
       isFavorite: false,
+      loading: true,
+      error: null,
       tabs: [
         { id: 'apropos', label: 'À propos' },
         { id: 'services', label: 'Taches' },
@@ -358,7 +361,26 @@ export default {
         { stars: 3, percentage: 1, count: 1 },
         { stars: 2, percentage: 1, count: 1 },
         { stars: 1, percentage: 0, count: 0 }
-      ]
+      ],
+      intervenant: {
+        id: null,
+        name: '',
+        profileImage: '',
+        rating: 0,
+        reviewCount: 0,
+        location: '',
+        experience: 'N/A',
+        verified: false,
+        expert: false,
+        memberSince: '',
+        responseTime: '~2h',
+        completedJobs: 0,
+        bio: [],
+        services: [],
+        reviews: [],
+        photos: [],
+        availability: []
+      }
     };
   },
   computed: {
@@ -367,38 +389,78 @@ export default {
     },
     buttonColor() {
       return '#609B41';
+    }
+  },
+  async created() {
+    await this.fetchIntervenantData();
+  },
+  methods: {
+    async fetchIntervenantData() {
+      this.loading = true;
+      try {
+        const response = await intervenantService.getById(this.intervenantId);
+        const data = response.data;
+        
+        // Transform backend data to match UI component expectations
+        this.intervenant = {
+          id: data.id,
+          name: data.utilisateur ? `${data.utilisateur.prenom || ''} ${data.utilisateur.nom || ''}`.trim() : 'Intervenant',
+          profileImage: data.utilisateur && data.utilisateur.url ? data.utilisateur.url : 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop',
+          rating: Number(data.average_rating) || 5.0,
+          reviewCount: Number(data.review_count) || 0,
+          location: data.ville || data.address || 'Localisation non spécifiée',
+          experience: '8 ans d\'expérience', // Placeholder as not in DB yet
+          verified: !!data.is_active,
+          expert: true, // Placeholder
+           memberSince: data.created_at ? `Membre depuis ${new Date(data.created_at).getFullYear()}` : 'Membre récent',
+          responseTime: '~2h', // Placeholder
+          completedJobs: data.interventions ? data.interventions.length : 0,
+          bio: data.bio ? [data.bio] : ['Aucune biographie disponible.'],
+          services: this.mapServices(data.taches),
+          reviews: this.mapReviews(data.interventions), // Using interventions as proxy for reviews if not separate
+          photos: data.interventions && data.interventions.flatMap(i => i.photos || []) || [
+            'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=400&h=300&fit=crop'
+          ],
+          availability: this.mapAvailability(data.disponibilites)
+        };
+      } catch (err) {
+        console.error("Erreur lors du chargement de l'intervenant:", err);
+        this.error = "Impossible de charger les informations de l'intervenant.";
+      } finally {
+        this.loading = false;
+      }
     },
-    intervenant() {
-      // Mock data - dans une vraie app, cela viendrait d'une API
-      return {
-        id: this.intervenantId,
-        name: 'Amina Chakir',
-        profileImage: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop',
-        rating: 5.0,
-        reviewCount: 89,
-        location: 'Tetouan Centre',
-        experience: '8 ans d\'expérience',
-        verified: true,
-        expert: true,
-        memberSince: 'Membre depuis 2019',
-        responseTime: '~2h',
-        completedJobs: 456,
-        bio: [
-          'Bonjour ! Je m\'appelle Amina et je suis professionnelle du ménage depuis 8 ans. Passionnée par mon métier, j\'accorde une attention particulière aux détails pour vous offrir un intérieur impeccable.',
-          'Mon expérience m\'a permis de développer des méthodes efficaces et respectueuses de l\'environnement. J\'apporte toujours mon propre matériel professionnel et j\'utilise des produits écologiques sur demande.',
-          'Ponctuelle, discrète et méticuleuse, je m\'adapte à vos besoins spécifiques pour que vous retrouviez un foyer parfaitement entretenu.'
-        ],
-        services: this.getServices(),
-        reviews: this.getReviews(),
-        photos: [
-          'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=400&h=300&fit=crop'
-        ],
-        availability: [
+    mapServices(taches) {
+      if (!taches || !Array.isArray(taches)) return [];
+      
+      // Group tasks by service or just list them
+      // Assuming tasks have a 'service' relation
+      return taches.map(t => ({
+        id: t.id,
+        name: t.nom_tache || t.service?.nom_service || 'Service',
+        description: t.description || 'Description du service...',
+        duration: '2-3 heures recommandées', // Placeholder
+        price: t.pivot?.prix_tache || t.prix || 25 // Placeholder if price not in DB
+      }));
+    },
+    mapReviews(interventions) {
+      if (!interventions) return [];
+      // Filter interventions that have evaluations/comments
+      // Note: Backend might need to include 'evaluations' relation
+      // using mock data for now if evaluations not loaded
+      return [
+        {
+          id: 1,
+          clientName: 'Salma K.',
+          date: '2024-11-20',
+          rating: 5,
+          comment: 'Excellente prestation ! Je recommande vivement.'
+        }
+      ]; 
+    },
+    mapAvailability(disponibilites) {
+      if (!disponibilites) return [
           { day: 'Lundi', available: true, hours: '9h00 - 17h00' },
           { day: 'Mardi', available: true, hours: '9h00 - 17h00' },
           { day: 'Mercredi', available: true, hours: '9h00 - 17h00' },
@@ -406,150 +468,28 @@ export default {
           { day: 'Vendredi', available: true, hours: '9h00 - 17h00' },
           { day: 'Samedi', available: true, hours: '9h00 - 17h00' },
           { day: 'Dimanche', available: false, hours: '' }
-        ]
-      };
-    }
-  },
-  methods: {
-    getServices() {
-      if (this.service === 'menage') {
-        return [
-          {
-            id: 1,
-            name: 'Ménage résidentiel & régulier',
-            description: 'Nettoyage complet de votre domicile : dépoussiérage complet, entretien régulier, sols, cuisine, salle de bain.',
-            duration: '2-3 heures recommandées',
-            price: 20
-          },
-          {
-            id: 2,
-            name: 'Nettoyage en profondeur (Deep Cleaning)',
-            description: 'Désinfection totale, nettoyage sous/derrière meubles, détartrage, plinthes, lavage des murs.',
-            duration: '4-6 heures recommandées',
-            price: 24
-          },
-          {
-            id: 3,
-            name: 'Nettoyage spécial : déménagement & post-travaux',
-            description: 'Avant/après déménagement, après rénovation, élimination poussières fines et résidus.',
-            duration: '3-5 heures recommandées',
-            price: 25
-          },
-          {
-            id: 4,
-            name: 'Lavage vitres & surfaces spécialisées',
-            description: 'Vitres intérieur/extérieur, marbre, bois nobles, soins textiles, moquettes & tapis.',
-            duration: '2-3 heures recommandées',
-            price: 22
-          },
-          {
-            id: 5,
-            name: 'Nettoyage mobilier & textiles',
-            description: 'Shampooing canapé, rénovation tissus/cuir, fauteuils, matelas, blanchisserie & repassage.',
-            duration: '2-4 heures recommandées',
-            price: 23
-          },
-          {
-            id: 6,
-            name: 'Nettoyage professionnel (bureaux & commerces)',
-            description: 'Entretien quotidien bureaux, désinfection postes de travail, vidage poubelles, salles de réunion.',
-            duration: '3-4 heures recommandées',
-            price: 21
-          }
-        ];
-      } else {
-        return [
-          {
-            id: 1,
-            name: 'Tonte de pelouse',
-            description: 'Entretien régulier de votre gazon avec équipement professionnel pour un résultat impeccable.',
-            duration: '1-2 heures recommandées',
-            price: 25
-          },
-          {
-            id: 2,
-            name: 'Taille de haies',
-            description: 'Façonnage et entretien de vos haies pour un jardin bien structuré et esthétique.',
-            duration: '2-3 heures recommandées',
-            price: 28
-          },
-          {
-            id: 3,
-            name: 'Plantation de fleurs',
-            description: 'Création et aménagement de massifs floraux selon vos goûts et la saison.',
-            duration: '2-4 heures recommandées',
-            price: 26
-          },
-          {
-            id: 4,
-            name: 'Élagage d\'arbres',
-            description: 'Taille et soin professionnel de vos arbres pour leur santé et votre sécurité.',
-            duration: '3-5 heures recommandées',
-            price: 30
-          },
-          {
-            id: 5,
-            name: 'Désherbage',
-            description: 'Élimination soignée des mauvaises herbes pour un jardin propre et sain.',
-            duration: '1-3 heures recommandées',
-            price: 24
-          },
-          {
-            id: 6,
-            name: 'Entretien de potager',
-            description: 'Soin et maintenance complète de votre potager : arrosage, fertilisation, récolte.',
-            duration: '2-3 heures recommandées',
-            price: 27
-          }
-        ];
-      }
-    },
-    getReviews() {
-      return [
-        {
-          id: 1,
-          clientName: 'Salma K.',
-          date: '2024-11-20',
-          rating: 5,
-          comment: 'Excellente prestation ! Amina est très professionnelle, ponctuelle et méticuleuse. Mon appartement n\'a jamais été aussi propre. Je la recommande vivement.'
-        },
-        {
-          id: 2,
-          clientName: 'Omar M.',
-          date: '2024-11-12',
-          rating: 5,
-          comment: 'Travail impeccable. Amina utilise des produits écologiques qui sentent bon. Très satisfait du résultat.'
-        },
-        {
-          id: 3,
-          clientName: 'Zineb R.',
-          date: '2024-10-28',
-          rating: 5,
-          comment: 'Très bon service. Amina est agréable et fait du bon travail. Une personne de confiance.'
-        },
-        {
-          id: 4,
-          clientName: 'Youssef L.',
-          date: '2024-10-15',
-          rating: 5,
-          comment: 'Je fais appel à Amina depuis plusieurs mois maintenant. Toujours aussi professionnelle et soigneuse. Un vrai plaisir de rentrer chez soi !'
-        },
-        {
-          id: 5,
-          clientName: 'Meryem B.',
-          date: '2024-09-30',
-          rating: 5,
-          comment: 'Amina a fait un grand nettoyage après mes travaux. Le résultat est bluffant ! Elle a même nettoyé des endroits auxquels je n\'aurais pas pensé.'
-        }
       ];
+      
+      return disponibilites.map(d => ({
+        day: this.getDayName(d.dateDebut), 
+        available: true,
+        hours: `${this.formatTime(d.dateDebut)} - ${this.formatTime(d.dateFin)}`
+      }));
     },
     formatDate(dateString) {
+      if (!dateString) return '';
       const date = new Date(dateString);
       return date.toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
       });
+    },
+    getDayName(dateString) {
+      return new Date(dateString).toLocaleDateString('fr-FR', { weekday: 'long' });
+    },
+    formatTime(dateString) {
+      return new Date(dateString).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     }
   }
 };

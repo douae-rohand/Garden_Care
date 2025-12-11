@@ -1,4 +1,3 @@
-<!-- App.vue - Fichier principal mis à jour -->
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Page d'accueil -->
@@ -32,6 +31,14 @@
       @view-profile="handleViewProfile"
     />
 
+    <!-- Page de profil d'intervenant -->
+    <IntervenantProfile
+      v-else-if="currentPage === 'intervenant-profile'"
+      :intervenant-id="selectedIntervenantId"
+      :service="getServiceName(selectedService)"
+      @back="handleBackFromProfile"
+    />
+
     <!-- Modals -->
     <LoginModal 
       :is-open="showLoginModal" 
@@ -56,12 +63,15 @@ import TestimonialsSection from './components/TestimonialsSection.vue'
 import Footer from './components/Footer.vue'
 import ServiceDetailPage from './components/ServiceDetailPage.vue'
 import AllIntervenantsPage from './components/AllIntervenantsPage.vue'
+import IntervenantProfile from './components/IntervenantProfile.vue'
 import LoginModal from './components/LoginModal.vue'
 import SignupModal from './components/SignupModal.vue'
 
 // État pour gérer la navigation entre les pages
-const currentPage = ref('home') // Valeurs possibles: 'home', 'service-detail', 'all-intervenants'
+const currentPage = ref('home') // Valeurs possibles: 'home', 'service-detail', 'all-intervenants', 'intervenant-profile'
 const selectedService = ref(null)
+const selectedIntervenantId = ref(null)
+const previousPage = ref('home')
 
 // État pour les modals
 const showLoginModal = ref(false)
@@ -102,9 +112,25 @@ const handleBackFromAllIntervenants = () => {
 
 // Navigation vers le profil d'un intervenant (depuis n'importe quelle page)
 const handleViewProfile = (intervenantId) => {
-  console.log('View profile:', intervenantId, 'for service:', selectedService.value)
-  // TODO: Implémenter la page de profil de l'intervenant
-  // currentPage.value = 'intervenant-profile'
+  console.log('View profile:', intervenantId)
+  selectedIntervenantId.value = intervenantId
+  previousPage.value = currentPage.value
+  currentPage.value = 'intervenant-profile'
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Retour du profil vers la page précédente
+const handleBackFromProfile = () => {
+  currentPage.value = previousPage.value
+  selectedIntervenantId.value = null
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Helper pour déterminer le nom du service pour le composant profile
+const getServiceName = (serviceId) => {
+  if (serviceId === 1) return 'jardinage'
+  if (serviceId === 2) return 'menage'
+  return 'menage' // default fallback
 }
 
 // Navigation vers la page de réservation d'une tâche
