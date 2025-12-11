@@ -154,7 +154,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue'
 import { Edit2, Trash2, Archive, Coins } from 'lucide-vue-next'
 
@@ -194,7 +194,7 @@ const services = ref([
   }
 ])
 
-const materialsByService: Record<string, string[]> = {
+const materialsByService = {
   menage: [
     'Aspirateur',
     'Balai et serpillière',
@@ -213,11 +213,11 @@ const materialsByService: Record<string, string[]> = {
   ]
 }
 
-const editingService = ref<number | null>(null)
+const editingService = ref(null)
 const editData = ref({
   description: '',
   hourlyRate: 0,
-  materials: [] as string[]
+  materials: []
 })
 const showArchived = ref(false)
 
@@ -236,21 +236,21 @@ const totalServices = computed(() => {
 })
 
 const totalCompletedJobs = computed(() => {
-  return services.value.reduce((sum, s) => sum +s.completedJobs, 0)
+  return services.value.reduce((sum, s) => sum + s.completedJobs, 0)
 })
 
-const getMaterials = (type: string) => {
+const getMaterials = (type) => {
   return materialsByService[type] || []
 }
 
-const toggleActive = (id: number) => {
+const toggleActive = (id) => {
   const service = services.value.find(s => s.id === id)
   if (service) {
     service.active = !service.active
   }
 }
 
-const startEdit = (service: any) => {
+const startEdit = (service) => {
   editingService.value = service.id
   editData.value = {
     description: service.description,
@@ -259,7 +259,7 @@ const startEdit = (service: any) => {
   }
 }
 
-const saveEdit = (id: number) => {
+const saveEdit = (id) => {
   const service = services.value.find(s => s.id === id)
   if (service) {
     service.description = editData.value.description
@@ -269,7 +269,7 @@ const saveEdit = (id: number) => {
   editingService.value = null
 }
 
-const toggleEditMaterial = (material: string) => {
+const toggleEditMaterial = (material) => {
   const index = editData.value.materials.indexOf(material)
   if (index > -1) {
     editData.value.materials.splice(index, 1)
@@ -278,7 +278,7 @@ const toggleEditMaterial = (material: string) => {
   }
 }
 
-const archiveService = (id: number) => {
+const archiveService = (id) => {
   if (confirm('Êtes-vous sûr de vouloir archiver ce sous-service ?')) {
     const service = services.value.find(s => s.id === id)
     if (service) {
@@ -288,14 +288,14 @@ const archiveService = (id: number) => {
   }
 }
 
-const unarchiveService = (id: number) => {
+const unarchiveService = (id) => {
   const service = services.value.find(s => s.id === id)
   if (service) {
     service.archived = false
   }
 }
 
-const deleteService = (id: number) => {
+const deleteService = (id) => {
   if (confirm('Êtes-vous sûr de vouloir supprimer définitivement ce sous-service ?')) {
     const index = services.value.findIndex(s => s.id === id)
     if (index > -1) {
