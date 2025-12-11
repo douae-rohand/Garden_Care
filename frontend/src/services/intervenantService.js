@@ -12,7 +12,7 @@ const intervenantService = {
     },
 
     /**
-     * Récupérer un intervenant par ID avec toutes ses informations
+     * Récupérer un intervenant par ID
      */
     getById(id) {
         return api.get(`intervenants/${id}`);
@@ -21,24 +21,44 @@ const intervenantService = {
     /**
      * Récupérer les interventions d'un intervenant
      */
-    getInterventions(intervenantId) {
-        return api.get(`intervenants/${intervenantId}/interventions`);
+    getInterventions(id) {
+        return api.get(`intervenants/${id}/interventions`);
     },
 
     /**
      * Récupérer les disponibilités d'un intervenant
      */
-    getDisponibilites(intervenantId) {
-        return api.get(`intervenants/${intervenantId}/disponibilites`);
+    getDisponibilites(id) {
+        return api.get(`intervenants/${id}/disponibilites`);
     },
 
     /**
-     * Récupérer les tâches qu'un intervenant peut effectuer
+     * Récupérer les tâches d'un intervenant
      */
-    getTaches(intervenantId) {
-        return api.get(`intervenants/${intervenantId}/taches`);
+    getTaches(id) {
+        return api.get(`intervenants/${id}/taches`);
     },
+
+    /**
+     * Créer un nouvel intervenant
+     */
+    create(data) {
+        return api.post('intervenants', data);
+    },
+
+    /**
+     * Mettre à jour un intervenant
+     */
+    update(id, data) {
+        return api.put(`intervenants/${id}`, data);
+    },
+
+    /**
+     * Supprimer un intervenant
+     */
+    delete(id) {
+        return api.delete(`intervenants/${id}`);
+    }
 };
 
 export default intervenantService;
-
