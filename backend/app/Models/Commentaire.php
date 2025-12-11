@@ -11,12 +11,12 @@ class Commentaire extends Model
 
     protected $table = 'commentaire';
 
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
+    
 
     protected $fillable = [
-        'contenu',
-        'interventionId',
+        'commentaire',
+        'intervention_id',
+        'type_auteur',
     ];
 
     /**
@@ -24,6 +24,6 @@ class Commentaire extends Model
      */
     public function intervention()
     {
-        return $this->belongsTo(Intervention::class, 'interventionId', 'id');
+        return $this->belongsTo(Intervention::class, 'intervention_id', 'id');
     }
 }
