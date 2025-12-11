@@ -12,14 +12,15 @@ class Utilisateur extends Authenticatable
     use HasFactory, Notifiable, HasApiTokens;
 
     protected $table = 'utilisateur';
+    protected $primaryKey = 'id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
      */
     protected $fillable = [
         'nom',
@@ -28,24 +29,20 @@ class Utilisateur extends Authenticatable
         'password',
         'telephone',
         'url',
-        'googlePw',
+        'google_pw',
         'address',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
      */
     protected $hidden = [
         'password',
-        'googlePw',
+        'google_pw',
     ];
 
     /**
      * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
      */
     protected function casts(): array
     {
@@ -83,6 +80,30 @@ class Utilisateur extends Authenticatable
      */
     public function getFullNameAttribute()
     {
-        return "{$this->nom} {$this->prenom}";
+        return "{$this->prenom} {$this->nom}";
+    }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin()
+    {
+        return $this->admin !== null;
+    }
+
+    /**
+     * Check if user is client
+     */
+    public function isClient()
+    {
+        return $this->client !== null;
+    }
+
+    /**
+     * Check if user is intervenant
+     */
+    public function isIntervenant()
+    {
+        return $this->intervenant !== null;
     }
 }

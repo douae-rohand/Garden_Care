@@ -216,13 +216,15 @@ const props = defineProps({
   onSignupClick: Function,
 })
 
-const emit = defineEmits(['close', 'signup-click'])
+const emit = defineEmits(['close', 'signup-click', 'admin-login'])
 
 const formData = ref({
   email: '',
   password: '',
   rememberMe: false,
 })
+
+const isLoading = ref(false)
 
 const handleClose = () => {
   emit('close')
@@ -238,6 +240,9 @@ const handleSignupClick = () => {
 }
 
 const handleSubmit = async () => {
+  if (isLoading.value) return
+  isLoading.value = true
+  
   try {
     const response = await authService.login({
       email: formData.value.email,
@@ -246,14 +251,24 @@ const handleSubmit = async () => {
     
     if (response.data.token) {
       authService.setAuthToken(response.data.token)
-      alert('Connexion réussie !')
-      handleClose()
-      window.location.reload()
+      const user = response.data.user
+      
+      // Vérifier si c'est un admin
+      if (user.admin) {
+        emit('admin-login', user)
+        handleClose()
+      } else {
+        alert('Connexion réussie !')
+        handleClose()
+        window.location.reload()
+      }
     }
   } catch (error) {
     console.error('Erreur de connexion:', error)
     const errorMessage = error.message || error.response?.data?.message || 'Erreur de connexion. Vérifiez vos identifiants.'
     alert(errorMessage)
+  } finally {
+    isLoading.value = false
   }
 }
 

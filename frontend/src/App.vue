@@ -1,8 +1,14 @@
-<!-- App.vue - Fichier principal mis à jour -->
+<!-- App.vue - Fichier principal avec Admin Dashboard -->
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Page d'administration -->
+    <AdminDashboard 
+      v-if="currentPage === 'admin'"
+      @logout="handleAdminLogout"
+    />
+
     <!-- Page d'accueil -->
-    <div v-if="currentPage === 'home'">
+    <div v-else-if="currentPage === 'home'">
       <Header 
         @login-click="showLoginModal = true" 
         @signup-click="showSignupModal = true" 
@@ -37,6 +43,7 @@
       :is-open="showLoginModal" 
       @close="showLoginModal = false"
       @signup-click="handleSwitchToSignup"
+      @admin-login="handleAdminLogin"
     />
     
     <SignupModal 
@@ -47,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import Header from './components/Header.vue'
 import HeroSection from './components/HeroSection.vue'
 import StatsSection from './components/StatsSection.vue'
@@ -58,14 +65,45 @@ import ServiceDetailPage from './components/ServiceDetailPage.vue'
 import AllIntervenantsPage from './components/AllIntervenantsPage.vue'
 import LoginModal from './components/LoginModal.vue'
 import SignupModal from './components/SignupModal.vue'
+import AdminDashboard from './components/Admin/AdminDashboard.vue'
+import authService from './services/authService'
 
 // État pour gérer la navigation entre les pages
-const currentPage = ref('home') // Valeurs possibles: 'home', 'service-detail', 'all-intervenants'
+// Valeurs possibles: 'home', 'service-detail', 'all-intervenants', 'admin'
+const currentPage = ref('home')
 const selectedService = ref(null)
+const currentUser = ref(null)
 
 // État pour les modals
 const showLoginModal = ref(false)
 const showSignupModal = ref(false)
+
+// Vérifier si l'utilisateur est connecté au chargement
+onMounted(async () => {
+  const token = authService.getToken()
+  if (token) {
+    try {
+      const response = await authService.getCurrentUser()
+      currentUser.value = response.data.user
+      
+      // Si c'est un admin, rediriger vers le dashboard
+      if (currentUser.value.admin) {
+        currentPage.value = 'admin'
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'utilisateur:', error)
+      authService.setAuthToken(null)
+    }
+  }
+  
+  // Vérifier l'URL pour accès direct admin
+  if (window.location.hash === '#admin' || window.location.pathname.includes('admin')) {
+    // Si pas connecté, montrer le modal de login
+    if (!currentUser.value?.admin) {
+      showLoginModal.value = true
+    }
+  }
+})
 
 const handleSearch = () => {
   console.log('Search clicked')
@@ -118,6 +156,27 @@ const handleTaskClick = (taskName) => {
 const handleSwitchToSignup = () => {
   showLoginModal.value = false
   showSignupModal.value = true
+}
+
+// Fonction pour gérer la connexion admin
+const handleAdminLogin = (user) => {
+  currentUser.value = user
+  showLoginModal.value = false
+  currentPage.value = 'admin'
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Fonction pour gérer la déconnexion admin
+const handleAdminLogout = async () => {
+  try {
+    await authService.logout()
+  } catch (error) {
+    console.error('Erreur lors de la déconnexion:', error)
+  }
+  authService.setAuthToken(null)
+  currentUser.value = null
+  currentPage.value = 'home'
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
 

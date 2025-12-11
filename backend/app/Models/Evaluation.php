@@ -10,15 +10,16 @@ class Evaluation extends Model
     use HasFactory;
 
     protected $table = 'evaluation';
+    protected $primaryKey = 'id';
 
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
+    const CREATED_AT = 'created_at';
+    const UPDATED_AT = 'updated_at';
 
     protected $fillable = [
         'note',
-        'interventionId',
-        'critaireId',
-        'typeAutheur',
+        'type_auteur',
+        'critaire_id',
+        'intervention_id',
     ];
 
     protected function casts(): array
@@ -33,7 +34,7 @@ class Evaluation extends Model
      */
     public function intervention()
     {
-        return $this->belongsTo(Intervention::class, 'interventionId', 'id');
+        return $this->belongsTo(Intervention::class, 'intervention_id', 'id');
     }
 
     /**
@@ -41,6 +42,6 @@ class Evaluation extends Model
      */
     public function critaire()
     {
-        return $this->belongsTo(Critaire::class, 'critaireId', 'id');
+        return $this->belongsTo(Critaire::class, 'critaire_id', 'id');
     }
 }

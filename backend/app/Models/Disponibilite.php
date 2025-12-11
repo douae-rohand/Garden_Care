@@ -9,23 +9,26 @@ class Disponibilite extends Model
 {
     use HasFactory;
 
-    protected $table = 'disponibilite';
+    protected $table = 'partitiontable';
+    protected $primaryKey = 'idPartition';
 
     const CREATED_AT = 'createdAt';
     const UPDATED_AT = 'updatedAt';
 
     protected $fillable = [
-        'intervenantId',
-        'dateDebut',
-        'dateFin',
-        'periode',
+        'idIntervenant',
+        'jour',
+        'status',
+        'heureDepart',
+        'heureFin',
     ];
 
     protected function casts(): array
     {
         return [
-            'dateDebut' => 'date',
-            'dateFin' => 'date',
+            'jour' => 'date',
+            'heureDepart' => 'datetime:H:i',
+            'heureFin' => 'datetime:H:i',
         ];
     }
 
@@ -34,6 +37,6 @@ class Disponibilite extends Model
      */
     public function intervenant()
     {
-        return $this->belongsTo(Intervenant::class, 'intervenantId', 'id');
+        return $this->belongsTo(Intervenant::class, 'idIntervenant', 'idIntervenant');
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Intervenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -30,18 +31,12 @@ class AuthController extends Controller
 
             $validated = $request->validate([
                 'nom' => 'required|string|max:100',
-                'prenom' => 'required|string|max:100', // Requis dans le formulaire
+                'prenom' => 'required|string|max:100',
                 'email' => 'required|string|email|max:150|unique:utilisateur,email',
                 'password' => 'required|string|min:8',
                 'confirmPassword' => 'nullable|same:password',
                 'telephone' => 'nullable|string|max:20',
-                'address' => 'nullable|string',
-                'adresse' => 'nullable|string', // Alias pour address
                 'type' => 'nullable|string|in:client,intervenant',
-                // Champs spécifiques pour intervenant
-                'ville' => 'nullable|string|max:100',
-                'bio' => 'nullable|string',
-                'description' => 'nullable|string', // Alias pour bio
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -52,43 +47,45 @@ class AuthController extends Controller
 
         DB::beginTransaction();
         try {
-            // Utiliser adresse si fourni, sinon address
-            $address = $validated['adresse'] ?? $validated['address'] ?? null;
-
             // Créer l'utilisateur
-            $user = Utilisateur::create([
+            $userId = DB::table('utilisateur')->insertGetId([
                 'nom' => $validated['nom'],
                 'prenom' => $validated['prenom'] ?? null,
                 'email' => $validated['email'],
-                'password' => $validated['password'], // Le cast 'hashed' gère automatiquement le hashage
+                'password' => Hash::make($validated['password']),
                 'telephone' => $validated['telephone'] ?? null,
-                'address' => $address,
-            ]);
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], 'id');
 
             $userType = $validated['type'] ?? 'client';
 
             // Créer le client ou l'intervenant selon le type
             if ($userType === 'client') {
-                Client::create([
-                    'id' => $user->id,
-                    'address' => $address,
-                    'ville' => $validated['ville'] ?? null,
+                DB::table('client')->insert([
+                    'id' => $userId,
                     'is_active' => true,
-                    'admin_id' => 1, // Par défaut, assigner au premier admin
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             } elseif ($userType === 'intervenant') {
-                Intervenant::create([
-                    'id' => $user->id,
-                    'address' => $address,
-                    'ville' => $validated['ville'] ?? null,
-                    'bio' => $validated['bio'] ?? $validated['description'] ?? null,
-                    'is_active' => true,
-                    'admin_id' => 1, // Par défaut, assigner au premier admin
+                DB::table('intervenant')->insert([
+                    'id' => $userId,
+                    'is_active' => false, // Nouveau intervenant en attente de validation
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
             DB::commit();
 
+            // Recharger l'utilisateur avec Eloquent pour avoir le modèle complet
+            $user = Utilisateur::find($userId);
+            
+            if (!$user) {
+                throw new \Exception('Utilisateur non trouvé après création');
+            }
+            
             // Charger les relations
             $user->load(['client', 'intervenant', 'admin']);
 
@@ -101,7 +98,7 @@ class AuthController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Erreur lors de l\'inscription: ' . $e->getMessage(), [
+            Log::error('Erreur lors de l\'inscription: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
             return response()->json([
@@ -187,8 +184,7 @@ class AuthController extends Controller
             'nom' => 'sometimes|string|max:100',
             'prenom' => 'sometimes|string|max:100',
             'telephone' => 'sometimes|string|max:20',
-            'address' => 'sometimes|string',
-            'url' => 'sometimes|string',
+            'photoPath' => 'sometimes|string',
         ]);
 
         $user->update($validated);
