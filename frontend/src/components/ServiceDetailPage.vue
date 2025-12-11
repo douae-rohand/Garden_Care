@@ -208,6 +208,7 @@
 <script>
 import { ArrowLeft, Star, Coins, MapPin, CheckCircle } from 'lucide-vue-next';
 import serviceService from '@/services/serviceService';
+import intervenantService from '@/services/intervenantService';
 
 export default {
   name: 'ServiceDetailPage',
@@ -323,6 +324,9 @@ export default {
         // Les taches sont déjà incluses dans la réponse du backend Laravel
         this.taches = serviceResponse.data.taches || [];
         
+        // Charger les intervenants pour ce service (limiter à 3 pour l'affichage)
+        await this.loadIntervenants(serviceId);
+        
       } catch (err) {
         console.error('Erreur lors du chargement du service:', err);
         this.error = err.message || 'Impossible de charger les données du service. Veuillez réessayer.';
@@ -330,6 +334,50 @@ export default {
         if (showLoading) {
           this.loading = false;
         }
+      }
+    },
+    
+    async loadIntervenants(serviceId) {
+      try {
+        // Récupérer les intervenants filtrés par serviceId
+        const params = { active: 'true', serviceId: serviceId };
+        const response = await intervenantService.getAll(params);
+        const intervenants = response.data || [];
+        
+        // Mapper les données de l'API vers le format attendu
+        this.intervenants = intervenants.slice(0, 3).map(intervenant => { // Limiter à 3 intervenants
+          const utilisateur = intervenant.utilisateur || {};
+          const taches = intervenant.taches || [];
+          
+          // Extraire les spécialités depuis les taches
+          const specialties = taches.map(tache => tache.nom_tache || tache.name || '').filter(Boolean);
+          
+          // Calculer le tarif moyen depuis les pivots
+          let hourlyRate = 25; // Par défaut
+          if (taches.length > 0) {
+            const rates = taches
+              .map(t => t.pivot?.prix_tache || t.pivot?.prixTache)
+              .filter(Boolean);
+            if (rates.length > 0) {
+              hourlyRate = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
+            }
+          }
+          
+          return {
+            id: intervenant.id,
+            name: `${utilisateur.nom || ''} ${utilisateur.prenom || ''}`.trim() || 'Intervenant',
+            rating: 4.5, // Valeur par défaut (peut être calculée depuis les évaluations)
+            reviewCount: 0, // Peut être calculé depuis les évaluations
+            hourlyRate: hourlyRate,
+            location: intervenant.ville || utilisateur.address || 'Non spécifiée',
+            image: intervenant.image_url || utilisateur.photo || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=150&h=150&fit=crop',
+            verified: intervenant.is_active !== false,
+            specialties: specialties,
+          };
+        });
+      } catch (error) {
+        console.error('Erreur lors du chargement des intervenants:', error);
+        this.intervenants = [];
       }
     }
   }
