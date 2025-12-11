@@ -64,7 +64,7 @@ class Intervenant extends Model
      */
     public function disponibilites()
     {
-        return $this->hasMany(Disponibilite::class, 'intervenantId', 'id');
+        return $this->hasMany(Disponibilite::class, 'intervenant_id', 'id');
     }
 
     /**
@@ -80,6 +80,34 @@ class Intervenant extends Model
         )->withPivot('prix_tache', 'status')
             ->withTimestamps();
     }
+
+    /**
+     * Get the services that this intervenant offers.
+     */
+    public function services()
+    {
+        return $this->belongsToMany(
+            Service::class,
+            'intervenant_service',
+            'intervenant_id',
+            'service_id'
+        )->withPivot('status')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the services that this intervenant offers.
+     
+        *public function services()
+        *{
+            *return $this->belongsToMany(
+                *Service::class,
+                *'intervenant_service',
+                *'intervenant_id',
+                *'service_id'
+            *)->withPivot('prix_tache', 'status', 'created_at', 'updated_at');
+        *}
+    **/
 
     /**
      * Get the materiels owned by this intervenant.
@@ -102,9 +130,9 @@ class Intervenant extends Model
         return $this->belongsToMany(
             Client::class,
             'favorise',
-            'idIntervenant',
-            'idClient'
-        )->withTimestamps();
+            'intervenant_id',
+            'client_id'
+        )->withPivot('created_at', 'updated_at');
     }
 
     /**

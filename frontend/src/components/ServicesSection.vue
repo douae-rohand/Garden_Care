@@ -120,6 +120,7 @@ const loadServices = async () => {
         color: config.color,
       }
     })
+    
   } catch (err) {
     console.error('Erreur lors du chargement des services:', err)
     error.value = 'Impossible de charger les services. Veuillez réessayer.'
