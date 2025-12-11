@@ -20,18 +20,17 @@ class Intervenant extends Model
     const UPDATED_AT = 'updated_at';
 
     protected $fillable = [
-        'id',
         'address',
         'ville',
         'bio',
-        'is_active',
-        'admin_id',
+        'isActive',
+        'adminId',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'isActive' => 'boolean',
         ];
     }
 
@@ -48,7 +47,7 @@ class Intervenant extends Model
      */
     public function admin()
     {
-        return $this->belongsTo(Admin::class, 'admin_id', 'id');
+        return $this->belongsTo(Admin::class, 'adminId', 'id');
     }
 
     /**
@@ -56,7 +55,7 @@ class Intervenant extends Model
      */
     public function interventions()
     {
-        return $this->hasMany(Intervention::class, 'intervenantId', 'id');
+        return $this->hasMany(Intervention::class, 'intervenant_id', 'id');
     }
 
     /**
@@ -64,7 +63,7 @@ class Intervenant extends Model
      */
     public function disponibilites()
     {
-        return $this->hasMany(Disponibilite::class, 'intervenantId', 'id');
+        return $this->hasMany(Disponibilite::class, 'intervenant_id', 'id');
     }
 
     /**
@@ -96,6 +95,23 @@ class Intervenant extends Model
     }
 
     /**
+     * Get the services that this intervenant offers.
+     */
+    public function services()
+    {
+        return $this->belongsToMany(
+            Service::class,
+            'intervenant_service',
+            'intervenant_id',
+            'service_id'
+        )->withPivot('status')
+            ->withTimestamps();
+=======
+        )->withPivot('prix_tache', 'status', 'created_at', 'updated_at');
+>>>>>>> 1bb69700cd637aa963780e26897a26562262c223
+    }
+
+    /**
      * Get the materiels owned by this intervenant.
      */
     public function materiels()
@@ -116,9 +132,9 @@ class Intervenant extends Model
         return $this->belongsToMany(
             Client::class,
             'favorise',
-            'idIntervenant',
-            'idClient'
-        )->withTimestamps();
+            'intervenant_id',
+            'client_id'
+        )->withPivot('created_at', 'updated_at');
     }
 
     /**
@@ -126,7 +142,7 @@ class Intervenant extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('isActive', true);
     }
 
     /**
@@ -134,6 +150,6 @@ class Intervenant extends Model
      */
     public function scopeInactive(Builder $query): Builder
     {
-        return $query->where('is_active', false);
+        return $query->where('isActive', false);
     }
 }

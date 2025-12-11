@@ -11,6 +11,9 @@ class Service extends Model
 
     protected $table = 'service';
 
+    const CREATED_AT = 'created_at';
+    const UPDATED_AT = 'updated_at';
+
     protected $fillable = [
         'nom_service',
         'description',
@@ -31,10 +34,10 @@ class Service extends Model
     {
         return $this->belongsToMany(
             Information::class,
-            'serviceinformation',
+            'service_information',
             'service_id',
             'information_id'
-        )->withTimestamps();
+        )->withPivot('created_at', 'updated_at');
     }
 
     /**
@@ -44,9 +47,9 @@ class Service extends Model
     {
         return $this->belongsToMany(
             Justificatif::class,
-            'servicejustificatif',
+            'service_justificatif',
             'service_id',
             'justificatif_id'
-        )->withTimestamps();
+        )->withPivot('created_at', 'updated_at');
     }
 }

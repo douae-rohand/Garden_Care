@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\InterventionController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\TacheController;
 use App\Http\Controllers\Api\ClientController;
-use App\Http\Controllers\Api\IntervenantController;
+use App\Http\Controllers\Api\Intervenant\IntervenantController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +26,20 @@ Route::get('/test', function () {
 // Routes publiques pour consultation
 Route::get('services', [ServiceController::class, 'index']);
 Route::get('intervenants/{id}/active-services-tasks', [IntervenantController::class, 'getActiveServicesAndTasks']);
+
+// TEMPORARY: Routes without authentication for testing (hardcoded intervenant ID=5)
+// TODO: Move these routes back inside auth:sanctum middleware when authentication is implemented
+// IMPORTANT: These routes must be defined BEFORE the apiResource routes to avoid route conflicts
+
+// Test route to verify no auth is required
+Route::get('intervenants/test', function () {
+    return response()->json(['message' => 'Test route works without auth', 'intervenant_id' => 5]);
+});
+
+Route::get('intervenants/me/taches', [IntervenantController::class, 'myTaches']);
+Route::put('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'updateMyTache']);
+Route::post('intervenants/me/taches/{tacheId}/toggle-active', [IntervenantController::class, 'toggleActiveMyTache']);
+Route::delete('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'deleteMyTache']);
 
 // Routes protégées (nécessitent une authentification)
 Route::middleware('auth:sanctum')->group(function () {
@@ -75,4 +89,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('intervenants/{id}/interventions', [IntervenantController::class, 'interventions']);
     Route::get('intervenants/{id}/disponibilites', [IntervenantController::class, 'disponibilites']);
     Route::get('intervenants/{id}/taches', [IntervenantController::class, 'taches']);
+    
+    // Routes for current intervenant's taches
+    // TODO: Uncomment these routes when authentication is implemented and remove the temporary routes above
+    // Route::get('intervenants/me/taches', [IntervenantController::class, 'myTaches']);
+    // Route::put('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'updateMyTache']);
+    // Route::post('intervenants/me/taches/{tacheId}/toggle-active', [IntervenantController::class, 'toggleActiveMyTache']);
+    // Route::delete('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'deleteMyTache']);
 });

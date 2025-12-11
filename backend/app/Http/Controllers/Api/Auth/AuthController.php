@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Utilisateur;
@@ -28,7 +28,7 @@ class AuthController extends Controller
             'nom' => $validated['nom'],
             'prenom' => $validated['prenom'] ?? null,
             'email' => $validated['email'],
-            'password' => $validated['password'], // Le mutateur Hash::make est dans le modèle
+            'password' => $validated['password'],
             'telephone' => $validated['telephone'] ?? null,
             'address' => $validated['address'] ?? null,
         ]);

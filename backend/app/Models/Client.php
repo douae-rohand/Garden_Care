@@ -16,21 +16,20 @@ class Client extends Model
 
     public $incrementing = false;
 
-    const CREATED_AT = 'created_at';
-    const UPDATED_AT = 'updated_at';
+    const CREATED_AT = 'createdAt';
+    const UPDATED_AT = 'updatedAt';
 
     protected $fillable = [
-        'id',
         'address',
         'ville',
-        'is_active',
-        'admin_id',
+        'isActive',
+        'adminId',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'isActive' => 'boolean',
         ];
     }
 
@@ -47,7 +46,7 @@ class Client extends Model
      */
     public function admin()
     {
-        return $this->belongsTo(Admin::class, 'admin_id', 'id');
+        return $this->belongsTo(Admin::class, 'adminId', 'id');
     }
 
     /**
@@ -66,9 +65,9 @@ class Client extends Model
         return $this->belongsToMany(
             Intervenant::class,
             'favorise',
-            'idClient',
-            'idIntervenant'
-        )->withTimestamps();
+            'client_id',
+            'intervenant_id'
+        )->withPivot('created_at', 'updated_at');
     }
 
     /**
@@ -76,7 +75,7 @@ class Client extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('isActive', true);
     }
 
     /**
@@ -84,6 +83,6 @@ class Client extends Model
      */
     public function scopeInactive(Builder $query): Builder
     {
-        return $query->where('is_active', false);
+        return $query->where('isActive', false);
     }
 }
