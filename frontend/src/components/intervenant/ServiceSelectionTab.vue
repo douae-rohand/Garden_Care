@@ -1250,4 +1250,5 @@ const getMaterialsByService = (serviceId) => {
 .retry-btn:hover {
   background-color: #B91C1C;
 }
+
 </style>
