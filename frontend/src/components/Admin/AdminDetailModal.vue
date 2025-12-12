@@ -121,14 +121,16 @@
               >
                 <div>
                   <p class="font-medium" style="color: #2F4F4F">{{ tache.nom }}</p>
-                  <p class="text-xs text-gray-500">{{ tache.description }}</p>
+                  <p v-if="tache.description" class="text-xs text-gray-500">{{ tache.description }}</p>
+                  <p v-else class="text-xs text-gray-400 italic">Aucune description</p>
                 </div>
-                <div class="text-right">
-                  <p class="font-bold" :style="{ color: data.service === 'Jardinage' ? '#92B08B' : '#1A5FA3' }">
-                    {{ tache.tarif }}DH/h
-                  </p>
-                  <p class="text-xs text-gray-500">{{ tache.duree }}</p>
-                </div>
+              <div class="text-right">
+                <p class="font-bold" :style="{ color: data.service === 'Jardinage' ? '#92B08B' : '#1A5FA3' }">
+                  {{ tache.tarif }}DH/h
+                </p>
+                <p v-if="tache.duree" class="text-xs text-gray-500">{{ tache.duree }}</p>
+                <p v-else class="text-xs text-gray-400 italic">Durée non précisée</p>
+              </div>
               </div>
             </div>
           </div>

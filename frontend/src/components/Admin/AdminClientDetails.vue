@@ -54,9 +54,10 @@
                 <Phone :size="14" />
                 <span>{{ client.telephone }}</span>
               </div>
-              <div v-if="client.adresse" class="flex items-center gap-2">
+              <div class="flex items-center gap-2">
                 <MapPin :size="14" />
-                <span>{{ client.adresse }}</span>
+                <span v-if="client.adresse">{{ client.adresse }}</span>
+                <span v-else class="text-gray-400 italic">Adresse non renseignée</span>
               </div>
               <div class="flex items-center gap-2">
                 <Calendar :size="14" />

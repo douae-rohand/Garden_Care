@@ -139,11 +139,13 @@
               </div>
               <div>
                 <h4 class="text-sm font-medium text-gray-500 mb-2">Ville</h4>
-                <p class="text-base" style="color: #2F4F4F">{{ data.ville || 'Non spécifié' }}</p>
+                <p v-if="data.ville" class="text-base" style="color: #2F4F4F">{{ data.ville }}</p>
+                <p v-else class="text-base text-gray-400 italic">Non renseignée</p>
               </div>
               <div class="col-span-2">
                 <h4 class="text-sm font-medium text-gray-500 mb-2">Adresse complète</h4>
-                <p class="text-base" style="color: #2F4F4F">{{ data.adresse || 'Non spécifiée' }}</p>
+                <p v-if="data.adresse" class="text-base" style="color: #2F4F4F">{{ data.adresse }}</p>
+                <p v-else class="text-base text-gray-400 italic">Non renseignée</p>
               </div>
               <div>
                 <h4 class="text-sm font-medium text-gray-500 mb-2">Date d'inscription</h4>
@@ -158,9 +160,10 @@
                   {{ data.statut }}
                 </span>
               </div>
-              <div v-if="data.bio" class="col-span-2">
+              <div class="col-span-2">
                 <h4 class="text-sm font-medium text-gray-500 mb-2">Bio</h4>
-                <p class="text-base text-gray-700">{{ data.bio }}</p>
+                <p v-if="data.bio" class="text-base text-gray-700">{{ data.bio }}</p>
+                <p v-else class="text-base text-gray-400 italic">Aucune biographie renseignée</p>
               </div>
             </div>
           </div>
@@ -176,7 +179,8 @@
                 <div class="flex items-start justify-between">
                   <div class="flex-1">
                     <h4 class="text-lg font-semibold mb-2" style="color: #2F4F4F">{{ tache.nom }}</h4>
-                    <p class="text-sm text-gray-600 mb-3">{{ tache.description || 'Aucune description' }}</p>
+                    <p v-if="tache.description" class="text-sm text-gray-600 mb-3">{{ tache.description }}</p>
+                    <p v-else class="text-sm text-gray-400 italic mb-3">Aucune description</p>
                     <div class="flex items-center gap-4 text-sm text-gray-500">
                       <div class="flex items-center gap-1">
                         <Clock :size="16" style="color: #5B7C99" />
@@ -226,7 +230,13 @@
           <!-- Disponibilité Tab (Intervenant only) -->
           <div v-if="activeTab === 'disponibilite' && type === 'intervenant'">
             <div class="bg-gray-50 rounded-xl p-6">
-              <p class="text-base" style="color: #2F4F4F">{{ data.disponibilite || 'Non spécifiée' }}</p>
+              <h4 class="text-sm font-medium text-gray-500 mb-3">Horaires de disponibilité</h4>
+              <p v-if="data.disponibilite" class="text-base" style="color: #2F4F4F">
+                {{ data.disponibilite }}
+              </p>
+              <p v-else class="text-base text-gray-400 italic">
+                Aucune disponibilité renseignée
+              </p>
             </div>
           </div>
         </div>

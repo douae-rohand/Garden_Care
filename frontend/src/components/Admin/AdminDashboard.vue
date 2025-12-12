@@ -44,7 +44,6 @@
           @back="activeSection = 'overview'"
           @view-client="viewClient"
           @suspend-client="suspendClient"
-          @view-all="activeSection = 'all-clients'"
         />
       </template>
 
@@ -56,7 +55,6 @@
           @back="activeSection = 'overview'"
           @view-intervenant="viewIntervenant"
           @suspend-intervenant="suspendIntervenant"
-          @view-all="activeSection = 'all-intervenants'"
         />
       </template>
 
@@ -88,22 +86,6 @@
         />
       </template>
 
-      <!-- All Intervenants Section (avec filtres avancés) -->
-      <template v-if="activeSection === 'all-intervenants'">
-        <AdminAllIntervenants
-          :service="selectedService"
-          @back="activeSection = 'overview'"
-          @view-profile="viewIntervenantProfile"
-        />
-      </template>
-
-      <!-- All Clients Section (avec filtres avancés) -->
-      <template v-if="activeSection === 'all-clients'">
-        <AdminAllClients
-          @back="activeSection = 'overview'"
-          @view-profile="viewClientProfile"
-        />
-      </template>
     </div>
 
     <!-- Detail Modal -->
@@ -157,8 +139,6 @@ import AdminServices from './AdminServices.vue'
 import AdminHistorique from './AdminHistorique.vue'
 import AdminReclamations from './AdminReclamations.vue'
 import AdminDetailModal from './AdminDetailModal.vue'
-import AdminAllIntervenants from './AdminAllIntervenants.vue'
-import AdminAllClients from './AdminAllClients.vue'
 import AdminProfileModal from './AdminProfileModal.vue'
 import AdminIntervenantProfile from './AdminIntervenantProfile.vue'
 import AdminClientDetails from './AdminClientDetails.vue'
@@ -174,7 +154,6 @@ const detailModalData = ref(null)
 const showProfileModal = ref(false)
 const profileModalType = ref('')
 const profileModalData = ref(null)
-const selectedService = ref('tous')
 const showIntervenantProfile = ref(false)
 const selectedIntervenant = ref(null)
 const showClientDetails = ref(false)
@@ -342,12 +321,6 @@ const handleModalAction = (action) => {
 const viewIntervenantProfile = (intervenant) => {
   profileModalType.value = 'intervenant'
   profileModalData.value = intervenant
-  showProfileModal.value = true
-}
-
-const viewClientProfile = (client) => {
-  profileModalType.value = 'client'
-  profileModalData.value = client
   showProfileModal.value = true
 }
 

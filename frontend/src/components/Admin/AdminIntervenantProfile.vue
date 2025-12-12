@@ -46,7 +46,11 @@
             </h3>
             <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
               <MapPin :size="14" />
-              {{ intervenant.adresse || '15 Rue du Jardin' }} • {{ getExperience() }}
+              <span :class="intervenant.adresse ? '' : 'text-gray-400 italic'">
+                {{ intervenant.adresse || 'Adresse non renseignée' }}
+              </span>
+              <span class="mx-1">•</span>
+              {{ getExperience() }}
             </div>
             <div class="flex items-center gap-2">
               <Star 
@@ -110,7 +114,10 @@
               <Clock :size="18" style="color: #5B7C99" class="mt-1" />
               <div>
                 <p class="text-xs text-gray-500 mb-1">Disponibilité</p>
-                <p class="text-sm font-medium" style="color: #2F4F4F">{{ intervenant.disponibilite || 'Lun-Sam 8h-18h' }}</p>
+                <p v-if="intervenant.disponibilite" class="text-sm font-medium" style="color: #2F4F4F">
+                  {{ intervenant.disponibilite }}
+                </p>
+                <p v-else class="text-sm text-gray-400 italic">Non renseignée</p>
               </div>
             </div>
           </div>
@@ -153,14 +160,16 @@
                 :style="{ borderColor: service === 'Jardinage' ? '#92B08B' : '#5B7C99' }"
               >
                 <h5 class="font-semibold mb-2" style="color: #2F4F4F">{{ tache.nom }}</h5>
-                <p class="text-sm text-gray-600 mb-3">{{ tache.description || 'Description de la tâche' }}</p>
+                <p v-if="tache.description" class="text-sm text-gray-600 mb-3">{{ tache.description }}</p>
+                <p v-else class="text-sm text-gray-400 italic mb-3">Aucune description</p>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2 text-sm text-gray-600">
                     <Clock :size="14" />
-                    <span>{{ tache.duree || '2-3 heures' }} recommandées</span>
+                    <span v-if="tache.duree">{{ tache.duree }}</span>
+                    <span v-else class="text-gray-400 italic">Durée non précisée</span>
                   </div>
                   <div class="text-xl font-bold" :style="{ color: service === 'Jardinage' ? '#92B08B' : '#5B7C99' }">
-                    {{ tache.tarif || '0' }}DH/h
+                    {{ tache.tarif }}DH/h
                   </div>
                 </div>
               </div>
@@ -177,14 +186,16 @@
                 :style="{ borderColor: getServiceColor() }"
               >
                 <h5 class="font-semibold mb-2" style="color: #2F4F4F">{{ tache.nom }}</h5>
-                <p class="text-sm text-gray-600 mb-3">{{ tache.description || 'Description de la tâche' }}</p>
+                <p v-if="tache.description" class="text-sm text-gray-600 mb-3">{{ tache.description }}</p>
+                <p v-else class="text-sm text-gray-400 italic mb-3">Aucune description</p>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2 text-sm text-gray-600">
                     <Clock :size="14" />
-                    <span>{{ tache.duree || '2-3 heures' }} recommandées</span>
+                    <span v-if="tache.duree">{{ tache.duree }}</span>
+                    <span v-else class="text-gray-400 italic">Durée non précisée</span>
                   </div>
                   <div class="text-xl font-bold" :style="{ color: getServiceColor() }">
-                    {{ tache.tarif || '0' }}DH/h
+                    {{ tache.tarif }}DH/h
                   </div>
                 </div>
               </div>
@@ -376,10 +387,23 @@ const getMainService = () => {
 }
 
 const getExperience = () => {
-  if (!props.intervenant || !props.intervenant.dateInscription) return '145 ans d\'expérience'
+  if (!props.intervenant || !props.intervenant.dateInscription) return 'Expérience non précisée'
   
-  const years = new Date().getFullYear() - new Date(props.intervenant.dateInscription).getFullYear()
-  return `${years > 0 ? years : '1'} ans d'expérience`
+  const inscriptionDate = new Date(props.intervenant.dateInscription)
+  const now = new Date()
+  
+  // Calculer la différence en années
+  const years = now.getFullYear() - inscriptionDate.getFullYear()
+  const months = now.getMonth() - inscriptionDate.getMonth()
+  
+  // Si le mois d'anniversaire n'est pas encore passé cette année, retirer 1 an
+  let experienceYears = years
+  if (months < 0 || (months === 0 && now.getDate() < inscriptionDate.getDate())) {
+    experienceYears = years - 1
+  }
+  
+  // Toujours afficher les années d'expérience (même si c'est 0)
+  return `${experienceYears >= 0 ? experienceYears : 0} an${experienceYears > 1 ? 's' : ''} d'expérience`
 }
 
 const getTachesForService = (service) => {
