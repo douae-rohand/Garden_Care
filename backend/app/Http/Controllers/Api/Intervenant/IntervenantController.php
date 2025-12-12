@@ -334,9 +334,9 @@ class IntervenantController extends Controller
                 $matchedMaterial = Materiel::where('nom_materiel', 'like', '%' . $materialName . '%')->first();
                 if ($matchedMaterial) {
                     $materialIds[] = $matchedMaterial->id;
-                    \Log::info("Partial match found: '{$materialName}' → '{$matchedMaterial->nom_materiel}'");
+                    Log::info("Partial match found: '{$materialName}' → '{$matchedMaterial->nom_materiel}'");
                 } else {
-                    \Log::warning("Material not found: '{$materialName}'. Available materials: " . json_encode(array_values($allMaterials)));
+                    Log::warning("Material not found: '{$materialName}'. Available materials: " . json_encode(array_values($allMaterials)));
                 }
             }
         }
@@ -344,7 +344,7 @@ class IntervenantController extends Controller
         // Sync materials for this intervenant (not for the task)
         $intervenant->materiels()->sync($materialIds);
         
-        \Log::info("Syncing materials for intervenant {$intervenant->id}: " . json_encode($materialIds));
+        Log::info("Syncing materials for intervenant {$intervenant->id}: " . json_encode($materialIds));
     }
 
     return response()->json([
@@ -435,11 +435,29 @@ class IntervenantController extends Controller
         
         $intervenant = $user->intervenant;
 
+        // Check if the intervenant has this tache, if not create the relationship
         $tache = $intervenant->taches()->find($tacheId);
+        
         if (!$tache) {
-            return response()->json([
-                'message' => 'Tâche non trouvée'
-            ], 404);
+            // Get the task to make sure it exists
+            $taskExists = \App\Models\Tache::find($tacheId);
+            if (!$taskExists) {
+                return response()->json([
+                    'message' => 'Tâche introuvable dans la base de données',
+                    'tacheId' => $tacheId
+                ], 404);
+            }
+            
+            // Create the relationship with default values
+            $intervenant->taches()->attach($tacheId, [
+                'prix_tache' => 0,
+                'status' => true,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            // Get the newly attached task
+            $tache = $intervenant->taches()->find($tacheId);
         }
 
         $currentStatus = $tache->pivot->status ?? true;
@@ -628,18 +646,19 @@ class IntervenantController extends Controller
                 'isActive' => $newStatus === 'active'
             ]);
         } else {
-            // Create new active relation
+            // Create new relation with 'demmande' status (pending approval)
             DB::table('intervenant_service')->insert([
                 'intervenant_id' => $intervenantId,
                 'service_id' => $serviceId,
-                'status' => 'active',
+                'status' => 'demmande',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             return response()->json([
-                'message' => 'Service activé',
-                'isActive' => true
+                'message' => 'Demande d\'activation envoyée',
+                'status' => 'demmande',
+                'isActive' => false
             ]);
         }
     }

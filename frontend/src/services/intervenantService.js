@@ -58,6 +58,13 @@ const intervenantService = {
      */
     delete(id) {
         return api.delete(`intervenants/${id}`);
+    },
+
+    /**
+     * Toggle service activation
+     */
+    toggleService(intervenantId, serviceId) {
+        return api.post(`intervenants/${intervenantId}/services/${serviceId}/toggle`);
     }
 };
 

@@ -318,12 +318,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Check, FileText, X, Upload, AlertCircle, Trash2, Send } from 'lucide-vue-next'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { Plus, Trash2, FileText, AlertCircle, Upload, Send } from 'lucide-vue-next'
 import authService from '@/services/authService'
+import intervenantService from '@/services/intervenantService'
 import intervenantTacheService from '@/services/intervenantTacheService'
+import axios from 'axios'
 
 const router = useRouter()
 const currentUser = ref(null)
@@ -331,6 +332,7 @@ const isLoadingUser = ref(true)
 const authError = ref(null)
 
 const showSuccessMessage = ref(false)
+const successMessage = ref('')
 const showActivationModal = ref(false)
 const currentService = ref(null)
 
@@ -661,46 +663,33 @@ const submitActivationRequest = async () => {
     return
   }
 
-  // TODO: Send the activation request to the backend
-  // For now, we'll just simulate a successful submission
   try {
-    console.log('Activation request data:', {
-      service: currentService.value,
-      presentation: activationForm.value.presentation,
-      experience: activationForm.value.experience,
-      idCard: activationForm.value.idCard?.name,
-      insurance: activationForm.value.insurance?.name,
-      additionalDocs: activationForm.value.additionalDocs.map(doc => ({
-        type: doc.type,
-        fileName: doc.file.name
-      }))
-    })
-
-    // Here you would normally send to backend:
-    // const formData = new FormData()
-    // formData.append('serviceId', currentService.value.id)
-    // formData.append('presentation', activationForm.value.presentation)
-    // formData.append('experience', String(activationForm.value.experience))
-    // formData.append('idCard', activationForm.value.idCard)
-    // formData.append('insurance', activationForm.value.insurance)
-    // activationForm.value.additionalDocs.forEach((doc, index) => {
-    //   formData.append(`additionalDocs[${index}][type]`, doc.type)
-    //   formData.append(`additionalDocs[${index}][file]`, doc.file)
-    // })
-    // await axios.post('/api/service-activation-requests', formData)
-
+    console.log('Submitting activation request for service:', currentService.value.id)
+    
+    // Call the API using toggleService (simplified version)
+    const response = await intervenantService.toggleService(
+      currentUser.value.intervenant.id,
+      currentService.value.id
+    )
+    
+    console.log('Activation request response:', response.data)
+    
     // Show success message
-    showActivationModal.value = false
     showSuccessMessage.value = true
+    successMessage.value = 'Demande d\'activation envoyée avec succès !'
     
-    setTimeout(() => {
-      showSuccessMessage.value = false
-    }, 4000)
+    // Update service state to show it's pending
+    serviceStates.value[currentService.value.id] = false // Will be updated when data is refreshed
     
-    resetActivationForm()
+    // Close modal and reset form
+    closeActivationModal()
+    
+    // Refresh data to show updated status
+    await loadIntervenantActiveData(currentUser.value.id)
+    
   } catch (error) {
     console.error('Error submitting activation request:', error)
-    alert('Une erreur est survenue lors de l\'envoi de la demande')
+    alert(`Erreur lors de l'envoi de la demande: ${error.response?.data?.message || error.message}`)
   }
 }
 

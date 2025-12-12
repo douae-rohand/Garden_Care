@@ -116,9 +116,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('intervenants/{id}/taches', [IntervenantController::class, 'taches']);
 
     // Routes for current intervenant's taches
-    // TODO: Uncomment these routes when authentication is implemented and remove the temporary routes above
-    // Route::get('intervenants/me/taches', [IntervenantController::class, 'myTaches']);
-    // Route::put('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'updateMyTache']);
-    // Route::post('intervenants/me/taches/{tacheId}/toggle-active', [IntervenantController::class, 'toggleActiveMyTache']);
-    // Route::delete('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'deleteMyTache']);
+    Route::get('intervenants/me/taches', [IntervenantController::class, 'myTaches']);
+    Route::put('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'updateMyTache']);
+    Route::post('intervenants/me/taches/{tacheId}/toggle-active', [IntervenantController::class, 'toggleActiveMyTache']);
+    Route::delete('intervenants/me/taches/{tacheId}', [IntervenantController::class, 'deleteMyTache']);
 });
