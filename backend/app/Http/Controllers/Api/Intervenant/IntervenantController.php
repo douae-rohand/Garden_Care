@@ -147,4 +147,47 @@ class IntervenantController extends Controller
 
         return response()->json($taches);
     }
+
+    /**
+     * Get services that this intervenant can perform
+     * Returns only services where the intervenant has at least one task
+     */
+    public function services($id)
+    {
+        $intervenant = Intervenant::findOrFail($id);
+        
+        \Log::info('Fetching services for intervenant ID: ' . $id);
+        
+        // Get all services
+        $allServices = \App\Models\Service::all();
+        
+        // Filter services: only include services where intervenant has at least one task
+        $servicesData = $allServices->map(function($service) use ($intervenant) {
+            // Count tasks that this intervenant can perform for this service
+            $tachesCount = \App\Models\Tache::where('service_id', $service->id)
+                ->whereHas('intervenants', function($query) use ($intervenant) {
+                    $query->where('intervenant_id', $intervenant->id);
+                })
+                ->count();
+
+            // Only include service if intervenant has at least one task
+            if ($tachesCount > 0) {
+                \Log::info("Service: {$service->nom_service}, Tasks count: {$tachesCount}");
+                return [
+                    'id' => $service->id,
+                    'nom_service' => $service->nom_service,
+                    'description' => $service->description,
+                    'taches_count' => $tachesCount
+                ];
+            }
+            
+            return null;
+        })->filter(); // Remove null values
+
+        \Log::info('Found ' . $servicesData->count() . ' services for intervenant');
+
+        return response()->json([
+            'data' => $servicesData->values() // Re-index array
+        ]);
+    }
 }

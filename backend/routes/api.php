@@ -70,7 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Routes Clients
     // ======================
     Route::apiResource('clients', ClientController::class);
-    
+    Route::get('clients/{id}/favorites', [ClientController::class, 'getFavorites']);
     Route::post('clients/{id}/favorites', [ClientController::class, 'addFavorite']);
     Route::delete('clients/{id}/favorites/{intervenantId}', [ClientController::class, 'removeFavorite']);
 
@@ -81,4 +81,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('intervenants/{id}/interventions', [IntervenantController::class, 'interventions']);
     Route::get('intervenants/{id}/disponibilites', [IntervenantController::class, 'disponibilites']);
     Route::get('intervenants/{id}/taches', [IntervenantController::class, 'taches']);
+    Route::get('intervenants/{id}/services', [IntervenantController::class, 'services']);
 });

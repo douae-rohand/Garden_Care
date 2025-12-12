@@ -104,15 +104,7 @@
 
             <!-- Mes Favoris Tab -->
             <div v-if="activeTab === 'favorites'">
-              <div class="bg-white rounded-lg shadow-md p-6 text-center">
-                <Heart :size="64" class="mx-auto mb-4 text-gray-400" />
-                <h3 class="text-xl font-bold mb-2" style="color: #2f4f4f">
-                  Mes intervenants favoris
-                </h3>
-                <p class="text-gray-600 mb-4">
-                  Aucun favori pour le moment
-                </p>
-              </div>
+              <MyFavoritesTab :client-id="currentUser.id" />
             </div>
 
             <!-- Mon Profil Tab -->

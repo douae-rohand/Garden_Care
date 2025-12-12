@@ -16,7 +16,6 @@ class Information extends Model
     protected $fillable = [
         'nom',
         'description',
-        'type',
     ];
 
     /**
@@ -42,7 +41,7 @@ class Information extends Model
             'intervention_information',
             'information_id',
             'intervention_id'
-        )->withPivot('valeur')
+        )->withPivot('information')
             ->withTimestamps();
     }
 }
