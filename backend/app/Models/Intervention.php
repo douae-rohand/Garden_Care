@@ -18,16 +18,16 @@ class Intervention extends Model
         'address',
         'ville',
         'status',
-        'dateIntervention',
-        'clientId',
-        'intervenantId',
-        'tacheId',
+        'date_intervention',
+        'client_id',
+        'intervenant_id',
+        'tache_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'dateIntervention' => 'date',
+            'date_intervention' => 'date',
         ];
     }
 

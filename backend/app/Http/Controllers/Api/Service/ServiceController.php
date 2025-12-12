@@ -82,11 +82,24 @@ class ServiceController extends Controller
     /**
      * Get taches for a specific service
      */
-    public function getTaches($id)
+    public function getTaches(Request $request, $id)
     {
         $service = Service::findOrFail($id);
-        $taches = $service->taches()->with(['materiels', 'intervenants'])->get();
+        
+        $query = $service->taches()->with(['materiels', 'intervenants']);
+        
+        // Filter by intervenant if provided
+        if ($request->has('intervenantId')) {
+            $intervenantId = $request->intervenantId;
+            $query->whereHas('intervenants', function($q) use ($intervenantId) {
+                $q->where('intervenant_id', $intervenantId);
+            });
+        }
+        
+        $taches = $query->get();
 
-        return response()->json($taches);
+        return response()->json([
+            'data' => $taches
+        ]);
     }
 }

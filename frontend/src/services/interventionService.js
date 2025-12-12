@@ -8,14 +8,14 @@ const interventionService = {
    * Récupérer toutes les interventions
    */
   getAll(params = {}) {
-    return api.get('interventions/index', { params });
+    return api.get('interventions', { params });
   },
 
   /**
    * Récupérer les interventions d'un client
    */
   getByClientId(clientId) {
-    return api.get(`clients/${clientId}/interventions`);
+    return api.get('interventions', { params: { clientId } });
   },
 
   /**
@@ -65,8 +65,17 @@ const interventionService = {
    */
   async getClientStatistics(clientId) {
     try {
-      const response = await api.get(`clients/${clientId}/statistics`);
-      return response.data;
+      const response = await api.get('interventions', { params: { clientId } });
+      const interventions = response.data.data || response.data;
+      
+      return {
+        pending: interventions.filter(i => this.mapStatus(i.status) === 'pending').length,
+        accepted: interventions.filter(i => this.mapStatus(i.status) === 'accepted').length,
+        inProgress: interventions.filter(i => this.mapStatus(i.status) === 'in-progress').length,
+        completed: interventions.filter(i => this.mapStatus(i.status) === 'completed').length,
+        cancelled: interventions.filter(i => this.mapStatus(i.status) === 'cancelled').length,
+        rejected: interventions.filter(i => this.mapStatus(i.status) === 'rejected').length
+      };
     } catch (error) {
       console.error('Error fetching client statistics:', error);
       throw error;
@@ -102,12 +111,8 @@ const interventionService = {
 
   /**
    * Transformer une intervention de la base de données vers le format frontend
-   * Note: This is now handled by the backend InterventionResource
    */
   transformIntervention(intervention) {
-    // Backend now returns data in the correct format via InterventionResource
-    // This method is kept for backward compatibility but should not be needed
-    return intervention;
     const status = this.mapStatus(intervention.status);
     
     return {

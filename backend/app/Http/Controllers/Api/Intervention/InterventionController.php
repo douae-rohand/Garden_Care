@@ -54,22 +54,105 @@ class InterventionController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'address' => 'required|string',
-            'ville' => 'required|string|max:100',
-            'status' => 'nullable|string|max:50',
-            'dateIntervention' => 'required|date',
-            'clientId' => 'required|exists:client,id',
-            'intervenantId' => 'required|exists:intervenant,id',
-            'tacheId' => 'required|exists:tache,id',
-        ]);
+        \Log::info('Creating intervention with data: ' . json_encode($request->all()));
+        try {
+            $validated = $request->validate([
+                'address' => 'required|string',
+                'ville' => 'required|string|max:100',
+                'status' => 'nullable|string|max:50',
+                'dateIntervention' => 'required|date',
+                'clientId' => 'required|exists:client,id',
+                'intervenantId' => 'required|exists:intervenant,id',
+                'tacheId' => 'required|exists:tache,id',
+                'description' => 'nullable|string',
+            ]);
 
-        $intervention = Intervention::create($validated);
+            // Map frontend field names to database column names
+            $interventionData = [
+                'address' => $validated['address'],
+                'ville' => $validated['ville'],
+                'status' => $validated['status'] ?? 'en_attente',
+                'date_intervention' => $validated['dateIntervention'],
+                'client_id' => $validated['clientId'],
+                'intervenant_id' => $validated['intervenantId'],
+                'tache_id' => $validated['tacheId'],
+            ];
 
-        return response()->json([
-            'message' => 'Intervention créée avec succès',
-            'intervention' => $intervention->load(['client.utilisateur', 'intervenant.utilisateur', 'tache']),
-        ], 201);
+            \Log::info('Intervention data to create: ' . json_encode($interventionData));
+            $intervention = Intervention::create($interventionData);
+            \Log::info('Intervention created with ID: ' . $intervention->id);
+
+            // Handle photos if provided
+            // Laravel handles photos[] as an array automatically
+            if ($request->hasFile('photos')) {
+                $photos = $request->file('photos');
+                // Handle array of photos (from photos[])
+                if (is_array($photos)) {
+                    foreach ($photos as $photo) {
+                        if ($photo && $photo->isValid()) {
+                            $path = $photo->store('interventions', 'public');
+                            \App\Models\PhotoIntervention::create([
+                                'intervention_id' => $intervention->id,
+                                'photo_path' => $path,
+                                'phase_prise' => 'avant',
+                            ]);
+                        }
+                    }
+                } elseif ($photos && $photos->isValid()) {
+                    // Single photo
+                    $path = $photos->store('interventions', 'public');
+                    \App\Models\PhotoIntervention::create([
+                        'intervention_id' => $intervention->id,
+                        'photo_path' => $path,
+                        'phase_prise' => 'avant',
+                    ]);
+                }
+            }
+
+            // Handle intervention information (surface, etc.)
+            if ($request->has('surface') && $request->surface) {
+                try {
+                    // Find or create information for surface
+                    $surfaceInfo = \App\Models\Information::firstOrCreate(
+                        ['nom' => 'Surface'],
+                        ['nom' => 'Surface', 'description' => 'Surface en m²']
+                    );
+                    
+                    $intervention->informations()->attach($surfaceInfo->id, [
+                        'information' => $request->surface . ' m²'
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::warning('Error attaching surface information: ' . $e->getMessage());
+                    // Continue without surface info - not critical
+                }
+            }
+
+            return response()->json([
+                'message' => 'Intervention créée avec succès',
+                'intervention' => $intervention->load([
+                    'client.utilisateur',
+                    'intervenant.utilisateur',
+                    'tache.service',
+                    'photos'
+                ]),
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation error creating intervention: ' . json_encode($e->errors()));
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error creating intervention: ' . $e->getMessage());
+            \Log::error('File: ' . $e->getFile() . ':' . $e->getLine());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::error('Request data: ' . json_encode($request->all()));
+            return response()->json([
+                'message' => 'Erreur lors de la création de l\'intervention',
+                'error' => config('app.debug') ? $e->getMessage() : 'Une erreur est survenue',
+                'file' => config('app.debug') ? $e->getFile() . ':' . $e->getLine() : null
+            ], 500);
+        }
     }
 
     /**
