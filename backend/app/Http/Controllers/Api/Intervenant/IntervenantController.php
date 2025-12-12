@@ -180,20 +180,15 @@ class IntervenantController extends Controller
      */
     public function myTaches(Request $request)
     {
-        // TODO: Uncomment when authentication is implemented
-        // $user = $request->user();
-        // 
-        // if (!$user->intervenant) {
-        //     return response()->json([
-        //         'message' => 'Utilisateur non associé à un intervenant'
-        //     ], 403);
-        // }
-        // 
-        // $intervenant = $user->intervenant;
+        $user = $request->user();
         
-        // TEMPORARY: Hardcoded intervenant ID for testing (from seeders: intervenant id=5)
-        $intervenantId = 5;
-        $intervenant = Intervenant::findOrFail($intervenantId);
+        if (!$user->intervenant) {
+            return response()->json([
+                'message' => 'Utilisateur non associé à un intervenant'
+            ], 403);
+        }
+        
+        $intervenant = $user->intervenant;
         
         // Get taches with pivot data, service, materials, and completed jobs count
         $taches = $intervenant->taches()
@@ -241,20 +236,15 @@ class IntervenantController extends Controller
      */
     public function updateMyTache(Request $request, $tacheId)
     {
-        // TODO: Uncomment when authentication is implemented
-        // $user = $request->user();
-        // 
-        // if (!$user->intervenant) {
-        //     return response()->json([
-        //         'message' => 'Utilisateur non associé à un intervenant'
-        //     ], 403);
-        // }
-        // 
-        // $intervenant = $user->intervenant;
+        $user = $request->user();
         
-        // TEMPORARY: Hardcoded intervenant ID for testing (from seeders: intervenant id=5)
-        $intervenantId = 5;
-        $intervenant = Intervenant::findOrFail($intervenantId);
+        if (!$user->intervenant) {
+            return response()->json([
+                'message' => 'Utilisateur non associé à un intervenant'
+            ], 403);
+        }
+        
+        $intervenant = $user->intervenant;
         
         // Check if the intervenant has this tache
         $tache = $intervenant->taches()->find($tacheId);
@@ -334,20 +324,15 @@ class IntervenantController extends Controller
      */
     public function toggleActiveMyTache(Request $request, $tacheId)
     {
-        // TODO: Uncomment when authentication is implemented
-        // $user = $request->user();
-        // 
-        // if (!$user->intervenant) {
-        //     return response()->json([
-        //         'message' => 'Utilisateur non associé à un intervenant'
-        //     ], 403);
-        // }
-        // 
-        // $intervenant = $user->intervenant;
+        $user = $request->user();
         
-        // TEMPORARY: Hardcoded intervenant ID for testing (from seeders: intervenant id=5)
-        $intervenantId = 5;
-        $intervenant = Intervenant::findOrFail($intervenantId);
+        if (!$user->intervenant) {
+            return response()->json([
+                'message' => 'Utilisateur non associé à un intervenant'
+            ], 403);
+        }
+        
+        $intervenant = $user->intervenant;
         
         $tache = $intervenant->taches()->find($tacheId);
         if (!$tache) {
@@ -373,20 +358,15 @@ class IntervenantController extends Controller
      */
     public function deleteMyTache(Request $request, $tacheId)
     {
-        // TODO: Uncomment when authentication is implemented
-        // $user = $request->user();
-        // 
-        // if (!$user->intervenant) {
-        //     return response()->json([
-        //         'message' => 'Utilisateur non associé à un intervenant'
-        //     ], 403);
-        // }
-        // 
-        // $intervenant = $user->intervenant;
+        $user = $request->user();
         
-        // TEMPORARY: Hardcoded intervenant ID for testing (from seeders: intervenant id=5)
-        $intervenantId = 5;
-        $intervenant = Intervenant::findOrFail($intervenantId);
+        if (!$user->intervenant) {
+            return response()->json([
+                'message' => 'Utilisateur non associé à un intervenant'
+            ], 403);
+        }
+        
+        $intervenant = $user->intervenant;
         
         $tache = $intervenant->taches()->find($tacheId);
         if (!$tache) {
