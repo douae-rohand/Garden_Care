@@ -150,28 +150,28 @@
             {{ iv.ville || iv.address || 'Non spécifié' }}
           </div>
 
-          <!-- Stats Row -->
-          <div class="w-full flex justify-between items-center border-t border-gray-100 pt-4 mb-6 text-sm">
-            <div class="flex flex-col items-start">
-              <span class="text-gray-400">Missions complétées:</span>
-              <span class="font-bold text-gray-700">{{ iv.missions_completees || 0 }}</span>
-            </div>
-            <div class="flex flex-col items-end">
-              <span class="text-gray-400">Tarif:</span>
-              <span class="bg-blue-800 text-white px-3 py-1 rounded-md font-bold text-xs">
-                 {{ iv.pivot?.prix_tache || 'N/A' }} DH/h
-              </span>
-            </div>
+        
+         <!-- Dans SearchServices.vue - Modifiez la section du bouton -->
+        <div class="w-full flex justify-between items-center border-t border-gray-100 pt-4 mb-6 text-sm">
+          <div class="flex flex-col items-start">
+            <span class="text-gray-400">Missions complétées:</span>
+            <span class="font-bold text-gray-700">{{ iv.missions_completees || 0 }}</span>
           </div>
+          <div class="flex flex-col items-end">
+            <span class="text-gray-400">Tarif:</span>
+            <span class="bg-blue-800 text-white px-3 py-1 rounded-md font-bold text-xs">
+              {{ iv.pivot?.prix_tache || 'N/A' }} DH/h
+            </span>
+          </div>
+        </div>
 
-          <!-- Action Button -->
-          <button 
-            @click="chooseIntervenant(iv)"
-            class="w-full py-3 bg-green-600 bg-opacity-90 hover:bg-opacity-100 text-white font-semibold rounded-xl transition-all shadow-md transform active:scale-95"
-          >
-            Demander ce service
-          </button>
-
+      <!-- Action Button - MODIFIÉ -->
+      <button 
+        @click.stop="openBookingModal(iv)"
+        class="w-full py-3 bg-green-600 bg-opacity-90 hover:bg-opacity-100 text-white font-semibold rounded-xl transition-all shadow-md transform active:scale-95"
+      >
+        Demander ce service
+      </button>
         </div>
       </div>
       
@@ -193,14 +193,26 @@
       @submitted="onRequestSubmitted" 
     />
 
+    <!-- MODAL DE RÉSERVATION -->
+    <BookingModal
+      v-if="selectedIntervenantForBooking"
+      :intervenant="selectedIntervenantForBooking"
+      :client-id="clientId"
+      @close="closeBookingModal"
+      @success="onBookingSuccess"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted , defineAsyncComponent } from 'vue'
 import serviceService from '@/services/serviceService'
 import intervenantService from '@/services/intervenantService'
 import ImprovedServiceRequestModal from './ImprovedServiceRequestModal.vue'
+
+const BookingModal = defineAsyncComponent(() =>
+  import('./BookingModal.vue')
+)
 
 const props = defineProps({ clientId: { type: Number, required: true } })
 
@@ -218,6 +230,9 @@ const loadingIntervenants = ref(false)
 const showRequestModal = ref(false)
 const selectedIntervenant = ref(null)
 
+const selectedIntervenantForBooking = ref(null)
+const showBookingModal = ref(false)
+
 const defaultAvatar = 'https://ui-avatars.com/api/?name=User&background=random' // Fallback
 
 // Helpers
@@ -228,6 +243,38 @@ function formatPrice(price) {
 
 function setCategory(cat) {
   selectedCategory.value = cat
+}
+
+function openBookingModal(intervenant) {
+  // Ajoutez les données manquantes pour le modal
+  selectedIntervenantForBooking.value = {
+    ...intervenant,
+    id: intervenant.id,
+    // Formatage pour le modal Booking
+    name: `${intervenant.utilisateur?.prenom || ''} ${intervenant.utilisateur?.nom || ''}`.trim(),
+    image: intervenant.utilisateur?.url || defaultAvatar,
+    averageRating: intervenant.note_moyenne || 4.5,
+    hourlyRate: intervenant.pivot?.prix_tache || 25,
+    // Données supplémentaires utiles
+    ville: intervenant.ville,
+    bio: intervenant.bio
+  };
+  
+  showBookingModal.value = true;
+}
+
+function closeBookingModal() {
+  selectedIntervenantForBooking.value = null;
+  showBookingModal.value = false;
+}
+
+function onBookingSuccess() {
+  closeBookingModal();
+  // Vous pouvez ajouter un feedback ici
+  alert('Votre demande de réservation a été envoyée avec succès !');
+  
+  // Optionnel : Retourner aux services ou recharger les données
+  backToServices();
 }
 
 // Computed
@@ -271,21 +318,85 @@ async function fetchServices() {
 }
 
 async function fetchIntervenantsForTask(taskId) {
-  loadingIntervenants.value = true
-  intervenants.value = []
+  loadingIntervenants.value = true;
+  intervenants.value = [];
+  
   try {
-    const res = await intervenantService.getIntervenantByTask(taskId)
-    const payload = res.data?.data ?? res.data
-    // Backend returns { intervenants: [...] } or just array in some fallback? 
-    // My backend change: `return response()->json(['intervenants' => $intervenants]);`
-    // JS service: `return { data: res.data?.intervenants ?? [] }`
-    // So payload here is the array.
+    console.log('🔍[DEBUG] fetchIntervenantsForTask called for task:', taskId);
     
-    intervenants.value = Array.isArray(payload) ? payload : (payload.intervenants || [])
-  } catch (e) {
-    console.error('Failed to fetch intervenants', e)
+    // ⭐ ESSAYEZ D'ABORD LA BONNE MÉTHODE
+    const res = await intervenantService.getIntervenantByTask(taskId);
+    
+    console.log('📦[DEBUG] Raw API Response:', res);
+    console.log('📦[DEBUG] Response data structure:', {
+      data: res.data,
+      dataType: typeof res.data,
+      isArray: Array.isArray(res.data),
+      keys: res.data ? Object.keys(res.data) : 'no data',
+      hasIntervenants: !!res.data?.intervenants,
+      intervenantsType: typeof res.data?.intervenants
+    });
+    
+    // ⭐⭐ CORRECTION CRUCIALE - Votre API retourne {intervenants: [...]}
+    // Mais votre service getIntervenantByTask() retourne {data: intervenants}
+    let intervenantsData = [];
+    
+    if (res.data?.intervenants) {
+      // Si la réponse a une clé 'intervenants'
+      intervenantsData = res.data.intervenants;
+      console.log('✅ Using res.data.intervenants, count:', intervenantsData.length);
+    } else if (Array.isArray(res.data)) {
+      // Si c'est directement un tableau
+      intervenantsData = res.data;
+      console.log('✅ Using res.data (array), count:', intervenantsData.length);
+    } else if (res.data?.data) {
+      // Si c'est paginé {data: [...]}
+      intervenantsData = res.data.data;
+      console.log('✅ Using res.data.data, count:', intervenantsData.length);
+    }
+    
+    console.log('👥[DEBUG] First intervenant sample:', intervenantsData[0]);
+    
+    // Transformation des données
+    intervenants.value = intervenantsData.map(iv => {
+      console.log('📊 Intervenant raw:', iv);
+      
+      return {
+        ...iv,
+        // ⭐ VOTRE API RETOURNE DÉJÀ note_moyenne, nombre_avis, etc.
+        // Pas besoin de les créer si elles existent déjà
+        note_moyenne: iv.average_rating || iv.note_moyenne || 4.5,
+        nombre_avis: iv.review_count || iv.nombre_avis || 12,
+        missions_completees: iv.interventions_count || iv.missions_completees || 0,
+        ville: iv.ville || iv.utilisateur?.ville || 'Non spécifié',
+        tarif: iv.pivot?.prix_tache || 'N/A'
+      };
+    });
+    
+    console.log('✅[DEBUG] Final intervenants:', intervenants.value);
+    
+  } catch (error) {
+    console.error('❌[DEBUG] Error:', error);
+    
+    // FALLBACK : Testez avec une URL directe
+    try {
+      console.log('🔄[DEBUG] Testing direct API call...');
+      const testRes = await fetch(`http://127.0.0.1:8000/api/taches/${taskId}/intervenants`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const testData = await testRes.json();
+      console.log('📡[DEBUG] Direct API result:', testData);
+      
+      if (testData.intervenants) {
+        intervenants.value = testData.intervenants;
+      }
+    } catch (directError) {
+      console.error('❌[DEBUG] Direct call also failed:', directError);
+    }
   } finally {
-    loadingIntervenants.value = false
+    loadingIntervenants.value = false;
   }
 }
 
@@ -304,8 +415,7 @@ function backToServices() {
 }
 
 function chooseIntervenant(iv) {
-  selectedIntervenant.value = iv
-  showRequestModal.value = true
+  openBookingModal(iv); // Utilisez la nouvelle fonction
 }
 
 function onRequestSubmitted() {
@@ -314,6 +424,8 @@ function onRequestSubmitted() {
   // Could add a toast notification here
   alert('Votre demande a été envoyée avec succès !')
 }
+
+
 
 // Lifecycle
 onMounted(() => {

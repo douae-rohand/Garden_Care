@@ -86,15 +86,7 @@
 
             <!-- Trouver Intervenants Tab -->
             <div v-if="activeTab === 'intervenants'">
-              <div class="bg-white rounded-lg shadow-md p-6 text-center">
-                <Users :size="64" class="mx-auto mb-4 text-gray-400" />
-                <h3 class="text-xl font-bold mb-2" style="color: #2f4f4f">
-                  Trouver des intervenants
-                </h3>
-                <p class="text-gray-600 mb-4">
-                  Fonctionnalité de recherche d'intervenants à venir...
-                </p>
-              </div>
+               <TrouverIntervenantsTab :client-id="currentUser.id" />
             </div>
 
             <!-- Mes Demandes Tab -->
@@ -171,6 +163,8 @@ import ClientHeader from '@/components/client/ClientHeader.vue';
 import ClientSidebar from '@/components/client/ClientSidebar.vue';
 import { demandService } from '@/services/demandService';
 import authService from '@/services/authService';
+import TrouverIntervenantsTab from '@/components/TrouverIntervenantsTab.vue';
+import MyFavoritesTab from '@/components/MyFavoritesTab.vue';
 
 export default {
   name: 'ClientDashboard',
@@ -182,7 +176,9 @@ export default {
     EnhancedMyDemandsTab,
     SearchServices,
     ClientHeader,
-    ClientSidebar
+    ClientSidebar,
+    TrouverIntervenantsTab,
+    MyFavoritesTab
   },
   emits: ['logout'],
   data() {

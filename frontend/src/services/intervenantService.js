@@ -1,11 +1,92 @@
 import api from './api'
 
 const intervenantService = {
-  // Fetch intervenants for a task via the Tache resource which includes intervenants relation
+  // Récupérer tous les intervenants avec pagination et filtres
+  // intervenantService.js - Version avec debug
+async getAllIntervenants(params = {}) {
+  try {
+    console.log('🔍 Calling API with params:', params);
+    
+    const res = await api.get('intervenants/search', { params });
+    
+    console.log('✅ API Response:', {
+      status: res.status,
+      statusText: res.statusText,
+      dataKeys: Object.keys(res.data || {}),
+      hasDataArray: Array.isArray(res.data?.data),
+      pagination: res.data ? {
+        current_page: res.data.current_page,
+        last_page: res.data.last_page,
+        total: res.data.total,
+        data_count: res.data.data?.length || 0
+      } : 'No data'
+    });
+    
+    return res.data; // Laravel pagination returns {data: [...], current_page: 1, ...}
+    
+  } catch (error) {
+    console.error('❌ API Error Details:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      params: error.config?.params,
+      responseData: error.response?.data
+    });
+    
+    // Si c'est une 404, essayez la route de base
+    if (error.response?.status === 404) {
+      console.log('🔄 Trying base route instead...');
+      try {
+        const res = await api.get('intervenants', { params });
+        return res.data;
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+        throw fallbackError;
+      }
+    }
+    
+    throw error;
+  }
+},
+
+  // Récupérer un intervenant spécifique
+  async getIntervenant(id) {
+    try {
+      const res = await api.get(`intervenants/${id}`)
+      return res.data
+    } catch (error) {
+      console.error('Error fetching intervenant:', error)
+      throw error
+    }
+  },
+
+  // Récupérer les services d'un intervenant
+  async getIntervenantServices(intervenantId) {
+    try {
+      const res = await api.get(`intervenants/${intervenantId}/services`)
+      return res.data
+    } catch (error) {
+      console.error('Error fetching intervenant services:', error)
+      throw error
+    }
+  },
+
+  // Récupérer les tâches d'un intervenant
+  async getIntervenantTaches(intervenantId) {
+    try {
+      const res = await api.get(`intervenants/${intervenantId}/taches`)
+      return res.data
+    } catch (error) {
+      console.error('Error fetching intervenant taches:', error)
+      throw error
+    }
+  },
+
+  // Méthodes existantes (gardez-les si vous les utilisez)
   async getByTask(taskId) {
     try {
       const res = await api.get(`taches/${taskId}`)
-      // The TacheController returns the tache object with an `intervenants` relation
       const intervenants = res.data?.intervenants ?? []
       return { data: intervenants }
     } catch (error) {
@@ -14,18 +95,40 @@ const intervenantService = {
     }
   },
 
-  async getIntervenantByTask(taskId) {
-    try {
-      const res = await api.get(`taches/${taskId}/intervenants`)
-      const intervenants = res.data?.intervenants ?? []
-      return { data: intervenants }
-    } catch (error) {
-      console.error('Error fetching intervenants via getIntervenantByTask:', error)
-      throw error
-    }
-  },
+ async getIntervenantByTask(taskId) {
+  try {
+    console.log('🔍[SERVICE] getIntervenantByTask for task:', taskId);
+    
+    const res = await api.get(`taches/${taskId}/intervenants`);
+    
+    console.log('📦[SERVICE] API Response:', {
+      status: res.status,
+      data: res.data,
+      hasIntervenants: !!res.data?.intervenants,
+      intervenantsCount: res.data?.intervenants?.length || 0
+    });
+    
+    // ⭐⭐ CORRECTION : Votre API retourne {intervenants: [...]}
+    // Retournez directement ce tableau
+    const intervenants = res.data?.intervenants || [];
+    
+    return { 
+      data: intervenants,
+      rawResponse: res.data // Pour debug
+    };
+    
+  } catch (error) {
+    console.error('❌[SERVICE] Error in getIntervenantByTask:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    throw error;
+  }
+},
 
-  // Fallback generic list with optional filters
+
+  // Méthode legacy
   list(params = {}) {
     return api.get('intervenants', { params })
   }

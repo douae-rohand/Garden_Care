@@ -18,6 +18,7 @@ class Tache extends Model
         'nom_tache',
         'description',
         'status',
+        'image_url',
     ];
 
     /**

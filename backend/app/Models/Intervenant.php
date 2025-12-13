@@ -16,11 +16,9 @@ class Intervenant extends Model
 
     public $incrementing = false;
 
-    const CREATED_AT = 'created_at';
-    const UPDATED_AT = 'updated_at';
+
 
     protected $fillable = [
-        'id',
         'address',
         'ville',
         'bio',

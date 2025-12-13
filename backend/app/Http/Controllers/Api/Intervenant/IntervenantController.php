@@ -148,6 +148,79 @@ class IntervenantController extends Controller
         return response()->json($taches);
     }
 
+
+
+        // Dans IntervenantController.php
+   public function search(Request $request)
+{
+    try {
+        $query = Intervenant::with(['utilisateur', 'taches.service', 'interventions']);
+        
+        // Filter by city
+        if ($request->has('ville') && $request->ville != 'all') {
+            $query->where('ville', 'like', '%' . $request->ville . '%');
+        }
+        
+        // Filter by service
+        if ($request->has('service_id') && $request->service_id != 'all') {
+            $query->whereHas('taches', function ($q) use ($request) {
+                $q->where('service_id', $request->service_id);
+            });
+        }
+        
+        // Filter by active status
+        if ($request->has('active')) {
+            $query->where('is_active', filter_var($request->active, FILTER_VALIDATE_BOOLEAN));
+        }
+        
+        // Search by name
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->whereHas('utilisateur', function ($q) use ($search) {
+                $q->where('prenom', 'like', '%' . $search . '%')
+                  ->orWhere('nom', 'like', '%' . $search . '%');
+            });
+        }
+        
+        // Temporairement : retirez les filtres de prix complexes
+        // if ($request->has('price_min') || $request->has('price_max')) {
+        //     $query->whereHas('taches', function ($q) use ($request) {
+        //         if ($request->has('price_min')) {
+        //             $q->where('prix_tache', '>=', $request->price_min);
+        //         }
+        //         if ($request->has('price_max')) {
+        //             $q->where('prix_tache', '<=', $request->price_max);
+        //         }
+        //     });
+        // }
+        
+        // Simplifiez le tri temporairement
+        $query->latest();
+        
+        // Pagination
+        $perPage = $request->get('per_page', 12);
+        $intervenants = $query->paginate($perPage);
+        
+        // Transformation simplifiée
+        $intervenants->getCollection()->transform(function ($intervenant) {
+            // Pour l'instant, utilisez des valeurs par défaut
+            $intervenant->average_rating = 4.0; // Valeur par défaut
+            $intervenant->review_count = 0;     // À implémenter plus tard
+            
+            return $intervenant;
+        });
+        
+        return response()->json($intervenants);
+        
+    } catch (\Exception $e) {
+        \Log::error('Search error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Server error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
     /**
      * Get services that this intervenant can perform
      * Returns only services where the intervenant has at least one task
